@@ -1,0 +1,86 @@
+
+{"05f2a901":
+  {"train":
+    {"0":
+     {"input":
+        {"objects":
+          {"1":
+            {"colour":  3,
+             "pos":  [
+               0,
+               10
+             ],
+             "type":  "random"},
+            "2":
+              {"colour":  9,
+               "pos":  [
+                 3,
+                 2
+               ],
+               "type":  "parallelogram"}
+          }
+        },
+       "output": {
+         "objects": {
+           "1": {
+             "colour": 3,
+             "pos": [
+               0,
+               4
+             ],
+             "type": "random"
+           },
+           "2": {
+             "colour": 9,
+             "pos": [
+               3,
+               2
+             ],
+             "type": "parallelogram"
+           }
+         }
+       }
+     },
+     "1":
+     {"input":
+        {"objects":
+          {"1":
+            {"colour":  3,
+             "pos":  [
+               0,
+               4
+             ],
+             "type":  "random"},
+            "2":
+              {"colour":  9,
+               "pos":  [
+                 6,
+                 3
+               ],
+               "type":  "parallelogram"}
+          }
+        },
+       "output": {
+         "objects": {
+           "1": {
+             "colour": 3,
+             "pos": [
+               3,
+               4
+             ],
+             "type": "random"
+           },
+           "2": {
+             "colour": 9,
+             "pos": [
+               6,
+               3
+             ],
+             "type": "parallelogram"
+           }
+         }
+       }
+     }
+    }
+  }
+}
