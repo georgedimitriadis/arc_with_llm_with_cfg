@@ -1,0 +1,15 @@
+root ::= thinking "\n<<<BEGIN>>>\n" canvas "\n<<<END>>>"
+
+canvas ::= canvas-var | "generate_contiguous_colour_objects(" canvas ")" | "make_new_canvas_as(" canvas ")" | "add_object_to_canvas(" canvas "," object ")"
+
+object ::= object-var | "select_only_object_of_colour(" canvas "," int ")" | "object_transform_translate_along_direction(" object "," distance ")"
+
+distance ::= distance-var | "get_distance_touching_between_objects(" object0 "," object1 ")"
+
+# ---- terminals ----
+thinking ::= tchar+
+tchar    ::= [^<] | "<" [^<] | "<<" [^<]
+canvas-var ::= "in_canvas" | "out_canvas"
+object-var ::= "object0" | "object1" | "object2" | "object3"
+distance-var ::= "distance0" | "distance1"
+int-lit ::= [0-9]+

@@ -16,7 +16,7 @@ from visualization import visualize_data as vis
 from structure.geometry.basic_geometry import Point, Vector, Orientation, Surround, Bbox, \
     Dimension2D, RelativePoint, Colour
 
-from data.generators import constants as const
+from structure import constants as const
 
 MAX_PAD_SIZE = const.MAX_PAD_SIZE
 
@@ -24,13 +24,14 @@ MAX_PAD_SIZE = const.MAX_PAD_SIZE
 class Object:
 
     def __init__(self, actual_pixels: np.ndarray, _id: None | int = None,
-                 actual_pixels_id: int | None = None, border_size: Surround = Surround(0, 0, 0, 0),
+                 actual_pixels_id: int | None = None, colour: int|None = None, border_size: Surround = Surround(0, 0, 0, 0),
                  canvas_pos: List | np.ndarray | Point = (0, 0, 0), canvas_id: int | None = None):
 
         self.id = _id
         self.actual_pixels_id = actual_pixels_id
         self.canvas_id = canvas_id
         self.border_size = border_size
+        self._colour = colour
 
         self._actual_pixels = actual_pixels
         self._canvas_pos = Point.point_from_numpy(np.array(canvas_pos)) if type(canvas_pos) != Point else canvas_pos
@@ -130,6 +131,23 @@ class Object:
         """
         self._actual_pixels = new_pixels
         self._reset_dimensions()
+
+    @property
+    def colour(self) -> int:
+        """
+        The getter of the colour
+        :return: The colour
+        """
+        return self._colour
+
+    @colour.setter
+    def colour(self, new_colour: int):
+        """
+        The setter of the colour
+        :param new_colour: The new colour
+        :return:
+        """
+        self._colour = new_colour
 
     @property
     def dimensions(self) -> Dimension2D:
@@ -349,7 +367,7 @@ class Object:
 
     def __copy__(self):
         """
-        Copys the whole Object
+        Copies the whole Object
         :return:
         """
         new_obj = Object(actual_pixels=self.actual_pixels, _id=self.id, border_size=self.border_size,
@@ -358,6 +376,7 @@ class Object:
         new_obj.border_size = copy(self.border_size)
         new_obj.bbox = copy(self.bbox)
         new_obj.rotation_axis = copy(self.rotation_axis)
+        new_obj.colour = copy(self.colour)
         for sym in self.symmetries:
             new_obj.symmetries.append(copy(sym))
         return new_obj

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from copy import copy
-from typing import Dict, List, Tuple, Annotated
+from typing import Dict, List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import ndimage
 
 from structure.utils import do_two_objects_overlap
 from structure.object.object import Object
@@ -30,7 +31,7 @@ class Canvas:
                      actual_pixels and as_grid_x_y_tilesize_colour need to be None.
         :param objects: A list of any objects the Canvas will show.
         :param _id: The id of the Canvas
-        :param actual_pixels: A predefined np.ndarray of pixels. This defines the size fo teh Canvas so if it is not
+        :param actual_pixels: A predefined np.ndarray of pixels. This defines the size of the Canvas so if it is not
                               None then the size and the as_grid_x_y_tilesize_colour need to be None.
         :param as_grid_x_y_tilesize_colour: This makes a grid background object on the Canvas. It is a four int Tuple.
                                             The ints are: the number of grid tiles on the x axis, the number of grid
@@ -54,7 +55,7 @@ class Canvas:
         if actual_pixels is None and as_grid_x_y_tilesize_colour is None:
             self.actual_pixels = np.ones((size.dy, size.dx))
         elif actual_pixels is not None and as_grid_x_y_tilesize_colour is None:
-            self.actual_pixels = actual_pixels
+            self.actual_pixels = np.flipud(actual_pixels)
             self.size = Dimension2D(self.actual_pixels.shape[1], self.actual_pixels.shape[0])
 
         self.full_canvas = np.zeros((MAX_PAD_SIZE, MAX_PAD_SIZE))
@@ -78,6 +79,7 @@ class Canvas:
             self.actual_pixels = self.background_pixels
 
         self.full_canvas[0: self.size.dy, 0:self.size.dx] = self.actual_pixels
+        #self.full_canvas[MAX_PAD_SIZE - self.size.dy: MAX_PAD_SIZE, 0:self.size.dx] = self.actual_pixels
         self.background_pixels = np.ndarray.copy(self.actual_pixels)
         self.objects_features = {}
         self.obj_id_to_index_hashmap = {}
@@ -111,6 +113,36 @@ class Canvas:
     @staticmethod
     def actual_pixels_index_to_canvas_coordinates(actual_pixels_index: Tuple[int, int]) -> Point:
         return Point(actual_pixels_index[1], actual_pixels_index[0])
+
+    def generate_objects_by_colour(self):
+        pass
+
+    def generate_contiguous_objects_by_colour(self, colour_to_id: dict[int, int]|None = None):
+        blobs = []
+        for color in self.get_used_colours():
+            mask = (self.actual_pixels == color)
+            labeled, num_features = ndimage.label(mask, structure=[[1,1,1], [1,1,1], [1,1,1]])  # 8-connectivity
+            for i in range(1, num_features + 1):
+                cells = list(zip(*np.where(labeled == i)))
+                blobs.append({'color': int(color), 'cells': cells})
+
+        for blob in blobs:
+            cells = blob['cells']
+            colour = blob['color']
+            rows = [r for r, c in cells]
+            cols = [c for r, c in cells]
+            bounding_box = (min(rows), max(rows), min(cols), max(cols))
+            pixels = np.ones((bounding_box[1] - bounding_box[0] + 1, bounding_box[3]-bounding_box[2] + 1))
+            for cell in cells:
+                pixels[cell[0] - bounding_box[0], cell[1] - bounding_box[2]] = colour
+            #pixels = np.flipud(pixels)
+            canvas_pos = Point(x=bounding_box[2], y=bounding_box[0])
+            id = colour_to_id[colour] if colour_to_id is not None else None
+            object = Object(actual_pixels=pixels, canvas_pos=canvas_pos, _id=id, colour=colour)
+            self.objects.append(object)
+
+        self.background_pixels = np.ones((self.size.dy, self.size.dx))
+        self.embed_objects()
 
     def resize_canvas(self, new_size: Dimension2D):
         """
@@ -148,7 +180,7 @@ class Canvas:
 
         return sorted_objects
 
-    def find_objects_of_colour(self, colour: int):
+    def get_objects_of_colour(self, colour: int):
         result = []
         for obj in self.objects:
             if obj.colour == colour:
@@ -156,7 +188,7 @@ class Canvas:
 
         return result
 
-    def find_object_at_canvas_pos(self, cp: Point) -> Primitive | None:
+    def get_object_at_canvas_pos(self, cp: Point) -> Primitive | None:
         for obj in self.objects:
             if cp == obj.canvas_pos:
                 return obj
@@ -174,6 +206,7 @@ class Canvas:
 
         return result
 
+    '''
     def where_object_fits_on_canvas(self, obj: Primitive,
                                     allowed_canvas_limits: Surround_Percentage | Surround =
                                     Surround_Percentage(Up=0.25, Down=0.25, Left=0.25, Right=0.25),
@@ -216,6 +249,7 @@ class Canvas:
                     if not overlap:
                         available_canvas_points.append(Point(x, y, 0))
         return available_canvas_points
+    '''
 
     def embed_objects(self):
         """
@@ -278,6 +312,7 @@ class Canvas:
             bbox_to_embed_in[np.where(bbox_to_embed > 1)] = bbox_to_embed[np.where(bbox_to_embed > 1)]
             self.actual_pixels[ymin_canv: ymax_canv, xmin_canv: xmax_canv] = bbox_to_embed_in
         self.full_canvas[0: self.size.dy, 0:self.size.dx] = self.actual_pixels
+        #self.full_canvas[MAX_PAD_SIZE - self.size.dy: MAX_PAD_SIZE, 0:self.size.dx] = self.actual_pixels
 
     def make_grid_background(self):
         colour = self.grid_colour
@@ -395,17 +430,6 @@ class Canvas:
             ymax = self.actual_pixels.shape[0]
 
         self.background_pixels[ymin: ymax, xmin: xmax] = obj.actual_pixels[: ymax - ymin, : xmax - xmin]
-        self.embed_objects()
-
-    def position_object(self, index: int, canvas_pos: Point):
-        """
-        Positions the object (with id = index) to the canvas_pos specified (the bottom left pixel of the object is
-        placed to that canvas_pos)
-        :param index: The id of the object
-        :param canvas_pos: The Point specifying the coordinates on the canvas of the bottom left pixel of the object
-        :return:
-        """
-        self.objects[index].canvas_pos = canvas_pos
         self.embed_objects()
 
     def get_object_by_id(self, id: int) -> Primitive | None:
@@ -641,7 +665,7 @@ class Canvas:
         for obj in self.objects:
             obj.replace_all_colours(colours_hash=colour_swap_map)
 
-    def show(self, full_canvas=True, fig_to_add: None | plt.Figure = None, nrows: int = 0, ncoloumns: int = 0,
+    def show(self, full_canvas=False, fig_to_add: None | plt.Figure = None, nrows: int = 0, ncoloumns: int = 0,
              index: int = 1, save_as: str | None = None, thin_lines: bool = False):
 
         if full_canvas:

@@ -65,7 +65,7 @@ def plot_pixels(pixels:NDArray, extent: None | List = None, axes: plt.Axes | Non
     else:
         ax = axes
     pixels_for_visualisation = data_to_colour(pixels)
-    pixels_for_visualisation = np.flipud(pixels_for_visualisation)
+    #pixels_for_visualisation = np.flipud(pixels_for_visualisation)
     num_y = pixels.shape[0]
     num_x = pixels.shape[1]
     if extent is None:
@@ -89,11 +89,12 @@ def plot_pixels(pixels:NDArray, extent: None | List = None, axes: plt.Axes | Non
     return fig, ax
 
 
-def plot_task(task_name:str, save=None, show_interactive=True):
+def plot_task(task_name:str, with_white_background:bool=False, save=None, show_interactive=True):
     """
     Plots all canvases of a Task as pairs from top to bottom. Each pair is an input (left) -> output (right) canvas of one
     example. The top examples are the training ones and the bottom the test one(s).
     :param task_name: The name of the task
+    :param with_white_background: If True it shows each canvas within the 32x32 white background
     :param save: Save in the file specified by the save if save is not None.
     :param show_interactive: If True then show the generated plot. Otherwise do not show.
     :return:
@@ -101,7 +102,7 @@ def plot_task(task_name:str, save=None, show_interactive=True):
     if not show_interactive:
        plt.switch_backend('Agg')
 
-    task = load_task_data_as_pixels(task_name)
+    task = load_task_data_as_pixels(task_name, with_white_background=with_white_background)
     n = len(task["train"]) + len(task["test"])
     fig, axs = plt.subplots(n, 2, figsize=(4,  2 *n), dpi=100)
     plt.subplots_adjust(wspace=0, hspace=0)

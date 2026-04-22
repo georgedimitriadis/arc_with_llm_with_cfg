@@ -8,9 +8,10 @@ from structure.canvas.canvas import Canvas
 from structure.geometry.basic_geometry import Point, Vector, Dimension2D, Surround, RelativePoint, Orientation, Colour
 from structure.object.primitives import Primitive, Predefined, Random, Parallelogram, Cross, Hole, Pi, InverseCross, \
     Dot, Angle, Diagonal, Steps, Fish, Bolt, Tie, Spiral, Pyramid, Maze
+from structure.task.task import Task
 
 
-# Math Funcs
+# <editor-fold desc="Math functions">
 def assign(a: int | float | bool | Point | Dimension2D | Primitive | Vector| Surround) -> \
         int | float | bool | Point | Dimension2D | Primitive | Vector| Surround:
     return a
@@ -82,9 +83,10 @@ def intersect(array_a: Any, array_b: Any) -> List:
 
 def index_of_item_in_list(array: List, value: Any) -> int:
     return array.index(value)
+# </editor-fold>
 
 
-#  Funcs on Structure (Points, Distance2D, Vector, etc)
+# <editor-fold desc="Functions on Structure (Points, Distance2D, Vector, etc)">
 def make_new_point(x: int, y: int, z:int = 0) -> Point:
     return Point(x, y, z)
 
@@ -282,9 +284,10 @@ def get_origin_of_vector(v: Vector) -> Point:
 
 def multiply_vector(v: Vector, mult: int) -> Vector:
     return v * mult
+# </editor-fold>
 
 
-#  Funcs on Canvasses
+# <editor-fold desc="Functions on Canvasses">
 def copy_canvas(canvas: Canvas) -> Canvas:
     return copy(canvas)
 
@@ -379,8 +382,25 @@ def get_tile_from_canvas_pos(canvas: Canvas, pixel: Point) -> Tuple[int, int] | 
 def get_canvas_pos_from_tile(canvas: Canvas, tile: Tuple[int, int]) -> Point:
     return canvas.grid_tiles_coordinates[tile]
 
+def generate_contiguous_colour_objects(canvas: Canvas) -> Canvas:
+    canvas.generate_contiguous_objects_by_colour()
+    return copy(canvas)
+# </editor-fold>
 
-# Funcs to get Primitive features
+
+# <editor-fold desc="Functions on Task">
+def select_input_test_canvas(task: Task, test_id: int) -> Canvas:
+    task.test_input_canvases[test_id]
+    return copy(task)
+
+def generate_contiguous_colour_objects_on_all_canvases(task : Task) -> Task:
+    task.generate_contiguous_objects_by_colour()
+    result = copy(task)
+    return result
+# </editor-fold>
+
+
+# <editor-fold desc="Functions to get Primitive features">
 def is_of_type(obj: Primitive, primitive_type: Any) -> bool:
     return type(obj) == primitive_type
 
@@ -671,7 +691,7 @@ def select_rest_of_the_objects(canvas: Canvas, obj: Primitive | List[Primitive] 
 
 def select_all_objects_of_colour(canvas: Canvas, colour: int) -> List[Primitive]:
     new_canvas = copy(canvas)
-    return new_canvas.find_objects_of_colour(colour)
+    return new_canvas.get_objects_of_colour(colour)
 
 
 def select_only_object_of_colour(canvas: Canvas, colour: int) -> Primitive | None:
@@ -701,9 +721,10 @@ def group_objects_according_to_colour(canvas: Canvas) -> Tuple[List[int], List[L
         num_of_objects_per_group.append(len(objects_in_a_group[-1]))
 
     return num_of_objects_per_group, objects_in_a_group
+# </editor-fold>
 
 
-# Funcs to transform Primitives
+# <editor-fold desc="Functions to transform Primitives">
 def object_transform_rotate(obj: Primitive, rotation: int) -> Primitive:
     new_obj = copy(obj)
     new_obj.rotate(times=rotation)
@@ -876,9 +897,10 @@ def object_transform_split_object_by_colour(obj: Primitive) -> List[Primitive]:
 
 def object_transform_add_two_objects(obj_a: Primitive, obj_b: Primitive) -> Primitive:
     return copy(obj_a + obj_b)
+# </editor-fold>
 
 
-# Funcs to order objects
+# <editor-fold desc="Functions to order Primitives">
 def order_objects_according_to_height(objects: List[Primitive], reverse: bool = False) -> List[Primitive]:
     heights = []
     for o in objects:
@@ -886,9 +908,10 @@ def order_objects_according_to_height(objects: List[Primitive], reverse: bool = 
     indices = list(np.argsort(heights)) if not reverse else list(reversed(np.argsort(heights)))
 
     return list(np.array(objects)[indices])
+# </editor-fold>
 
 
-# Funcs to make Primitives
+# <editor-fold desc="Functions to create Primitives">
 def make_new_random(size: Dimension2D | np.ndarray | List, border_size: Surround = Surround(0, 0, 0, 0),
                     canvas_pos: Point = Point(0, 0), colour: None | int = None, occupancy_prob: float = 0.5,
                     required_dist_to_others: Surround = Surround(0, 0, 0, 0),
@@ -1047,3 +1070,4 @@ def make_new_maze(size: Dimension2D | np.ndarray | List, border_size: Surround =
         -> Primitive:
     return Maze(size=size, border_size=border_size, colour=colour, required_dist_to_others=required_dist_to_others,
                 _id=_id, actual_pixels_id=actual_pixels_id, canvas_id=canvas_id)
+# </editor-fold>
