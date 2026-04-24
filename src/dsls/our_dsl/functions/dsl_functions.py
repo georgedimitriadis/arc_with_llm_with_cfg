@@ -383,6 +383,12 @@ def get_canvas_pos_from_tile(canvas: Canvas, tile: Tuple[int, int]) -> Point:
     return canvas.grid_tiles_coordinates[tile]
 
 def generate_contiguous_colour_objects(canvas: Canvas) -> Canvas:
+    """
+    Takes the actual_pixels of the Canvas object and generates Objects from contiguous coloured pixels. So all touching
+    pixels with a specific colour become an Object. The generated Objects are added to the returned Canvas.
+    :param canvas: The Canvas with coloured actual_pixels array that needs to be broken into objects.
+    :return: The Canvas with the new Objects.
+    """
     canvas.generate_contiguous_objects_by_colour()
     return copy(canvas)
 # </editor-fold>

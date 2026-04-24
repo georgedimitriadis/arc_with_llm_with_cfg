@@ -1,15 +1,28 @@
-root ::= thinking "\n<<<BEGIN>>>\n" canvas "\n<<<END>>>"
+root       ::= thinking "\n<<<BEGIN>>>\n" canvas3 "\n<<<END>>>"
 
-canvas ::= canvas-var | "generate_contiguous_colour_objects(" canvas ")" | "make_new_canvas_as(" canvas ")" | "add_object_to_canvas(" canvas "," object ")"
+thinking   ::= "<think>" think-body "</think>"
+think-body ::= inner*
+inner      ::= [^<] | "<" [^/]
 
-object ::= object-var | "select_only_object_of_colour(" canvas "," int ")" | "object_transform_translate_along_direction(" object "," distance ")"
+# ---- canvas, depths 0..3 ----
+canvas0 ::= canvas-var
+canvas1 ::= canvas-var | "generate_contiguous_colour_objects(" canvas0 ")" | "make_new_canvas_as(" canvas0 ")" | "add_object_to_canvas(" canvas0 "," object0 ")"
+canvas2 ::= canvas-var | "generate_contiguous_colour_objects(" canvas1 ")" | "make_new_canvas_as(" canvas1 ")" | "add_object_to_canvas(" canvas1 "," object1 ")"
+canvas3 ::= canvas-var | "generate_contiguous_colour_objects(" canvas2 ")" | "make_new_canvas_as(" canvas2 ")" | "add_object_to_canvas(" canvas2 "," object2 ")"
 
-distance ::= distance-var | "get_distance_touching_between_objects(" object0 "," object1 ")"
+# ---- object, depths 0..3 ----
+object0 ::= object-var
+object1 ::= object-var | "select_only_object_of_colour(" canvas0 "," int ")" | "object_transform_translate_along_direction(" object0 "," distance0 ")"
+object2 ::= object-var | "select_only_object_of_colour(" canvas1 "," int ")" | "object_transform_translate_along_direction(" object1 "," distance1 ")"
+object3 ::= object-var | "select_only_object_of_colour(" canvas2 "," int ")" | "object_transform_translate_along_direction(" object2 "," distance2 ")"
+
+# ---- distance, depths 0..2 ----
+distance0 ::= distance-var
+distance1 ::= distance-var | "get_distance_touching_between_objects(" object0 "," object0 ")"
+distance2 ::= distance-var | "get_distance_touching_between_objects(" object1 "," object1 ")"
 
 # ---- terminals ----
-thinking ::= tchar+
-tchar    ::= [^<] | "<" [^<] | "<<" [^<]
-canvas-var ::= "in_canvas" | "out_canvas"
-object-var ::= "object0" | "object1" | "object2" | "object3"
+canvas-var   ::= "in_canvas" | "out_canvas"
+object-var   ::= "object0" | "object1" | "object2" | "object3"
 distance-var ::= "distance0" | "distance1"
-int-lit ::= [0-9]+
+int          ::= [0-9]+

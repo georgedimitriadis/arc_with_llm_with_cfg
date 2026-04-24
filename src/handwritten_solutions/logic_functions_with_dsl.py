@@ -184,6 +184,46 @@ def single_line_05f2a901(in_canvas:Canvas) -> Canvas:
     return dsl.add_object_to_canvas(dsl.add_object_to_canvas(dsl.make_new_canvas_as(dsl.generate_contiguous_colour_objects(in_canvas)), dsl.object_transform_translate_along_direction(dsl.select_only_object_of_colour(dsl.generate_contiguous_colour_objects(in_canvas), 3),  dsl.get_distance_touching_between_objects(dsl.select_only_object_of_colour(dsl.generate_contiguous_colour_objects(in_canvas), 3), dsl.select_only_object_of_colour(dsl.generate_contiguous_colour_objects(in_canvas), 9)))), dsl.select_only_object_of_colour(dsl.generate_contiguous_colour_objects(in_canvas), 9))
 
 
+def logic_function_05f2a901_llm_result(input_canvas):
+    '''
+    ### Logic Explanation
+    By analyzing the three training pairs, a consistent spatial transformation emerges:
+    1. **Object Identification**: Each input contains exactly two non-black contiguous shapes: an **Azure (9)** block
+    and a **Red (3)** block. The Azure block acts as a stationary anchor, while the Red block is the moving agent.
+    2. **Pixel-to-Object Conversion**: The raw pixel arrays must first be parsed into discrete `Object` entities.
+    The function `generate_contiguous_colour_objects` handles this by grouping adjacent pixels of the same color.
+    3. **Distance Calculation**: We need to find the exact translation vector that will make the Red object share an
+    edge with the Azure object. `get_distance_touching_between_objects(mover, target)` computes this vector.
+    4. **Transformation**: The computed distance is applied to the Red object using `object_transform_translate_along_direction`,
+    producing a new translated `Object`.
+    5. **Rendering**: Since translations return new objects rather than mutating existing ones, we initialize a fresh
+    black canvas of the same dimensions using `make_new_canvas_as`. We then place both the translated Red object and the
+    stationary Azure object onto this new canvas using `add_object_to_canvas`.
+    This logic perfectly aligns with all three training examples:
+    - **Train 0**: Red is below Azure → moves **UP** to touch.
+    - **Train 1**: Red is left of Azure → moves **RIGHT** to touch.
+    - **Train 2**: Red is above Azure → moves **DOWN** to touch.
+    '''
+    # 1. Convert contiguous pixel groups into discrete Objects
+    canvas = dsl.generate_contiguous_colour_objects(input_canvas)
+
+    # 2. Identify the stationary target (Azure/9) and the moving object (Red/3)
+    target = dsl.select_only_object_of_colour(canvas, 9)
+    mover = dsl.select_only_object_of_colour(canvas, 3)
+
+    # 3. Calculate the exact translation vector for the mover to touch the target
+    translation = dsl.get_distance_touching_between_objects(mover, target)
+
+    # 4. Apply the translation to the mover, creating a new transformed Object
+    moved_mover = dsl.object_transform_translate_along_direction(mover, translation)
+
+    # 5. Initialize a fresh black canvas and render both objects onto it
+    output_canvas = dsl.make_new_canvas_as(canvas)
+    output_canvas = dsl.add_object_to_canvas(output_canvas, moved_mover)
+    output_canvas = dsl.add_object_to_canvas(output_canvas, target)
+
+    return output_canvas
+
 def logic_function_06df4c85(in_canvas: Canvas) -> Canvas | None:
     try:
         out_canvas = dsl.copy_canvas(in_canvas)
