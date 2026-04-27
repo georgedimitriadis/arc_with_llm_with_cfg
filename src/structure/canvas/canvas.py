@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import ndimage
 
-from structure.utils import do_two_objects_overlap
 from structure.object.object import Object
 from structure.utils import union2d
 from structure import constants as const
@@ -135,10 +134,42 @@ class Canvas:
             pixels = np.ones((bounding_box[1] - bounding_box[0] + 1, bounding_box[3]-bounding_box[2] + 1))
             for cell in cells:
                 pixels[cell[0] - bounding_box[0], cell[1] - bounding_box[2]] = colour
-            #pixels = np.flipud(pixels)
             canvas_pos = Point(x=bounding_box[2], y=bounding_box[0])
             id = colour_to_id[colour] if colour_to_id is not None else None
             object = Object(actual_pixels=pixels, canvas_pos=canvas_pos, _id=id, colour=colour)
+            self.objects.append(object)
+
+        self.background_pixels = np.ones((self.size.dy, self.size.dx))
+        self.embed_objects()
+
+    def generate_contiguous_objects(self):
+        blobs = []
+        mask = (self.actual_pixels != 1)
+        labeled, num_features = ndimage.label(mask, structure=[[1, 1, 1], [1, 1, 1], [1, 1, 1]])  # 8-connectivity
+        for i in range(1, num_features + 1):
+            cells = list(zip(*np.where(labeled == i)))
+            blobs.append({'id': i, 'cells': cells})
+
+        blobs = []
+        mask = (self.actual_pixels != 1)
+        labeled, num_features = ndimage.label(mask, structure=[[1, 1, 1], [1, 1, 1], [1, 1, 1]])  # 8-connectivity
+        for i in range(1, num_features + 1):
+            cells = list(zip(*np.where(labeled == i)))
+            blobs.append({'id': i, 'cells': cells})
+
+        for blob in blobs:
+            cells = blob['cells']
+            id = blob['id']
+            rows = [r for r, c in cells]
+            cols = [c for r, c in cells]
+            bounding_box = (min(rows), max(rows), min(cols), max(cols))
+            pixels = np.ones((bounding_box[1] - bounding_box[0] + 1, bounding_box[3] - bounding_box[2] + 1))
+            for cell in cells:
+                pixels[cell[0] - bounding_box[0], cell[1] - bounding_box[2]] = self.actual_pixels[cell[0], cell[1]]
+            canvas_pos = Point(x=bounding_box[2], y=bounding_box[0])
+            object = Object(actual_pixels=pixels, canvas_pos=canvas_pos, _id=id)
+            if len(object.get_used_colours()) == 1:
+                object.colour = object.get_used_colours()
             self.objects.append(object)
 
         self.background_pixels = np.ones((self.size.dy, self.size.dx))

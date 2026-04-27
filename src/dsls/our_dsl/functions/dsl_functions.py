@@ -65,10 +65,6 @@ def all_binary_combinations(array: List[Any]) -> List[Tuple[Any, Any]]:
     return list(combinations(array, 2))
 
 
-def select_from_list(array: List, index: int) -> Any:
-    return array[index]
-
-
 def intersect(array_a: Any, array_b: Any) -> List:
     result = []
     array_a = array_a if isinstance(array_a, list) else [array_a]
@@ -79,12 +75,84 @@ def intersect(array_a: Any, array_b: Any) -> List:
                 result.append(a)
 
     return result
-
-
-def index_of_item_in_list(array: List, value: Any) -> int:
-    return array.index(value)
 # </editor-fold>
 
+# <editor-fold desc="Functions on List selection)">
+def get_item_n_from_list(list: List[Any], n: int) -> Any:
+    """
+    Get the index item of the list
+    :param list: The list
+    :param n: The index
+    :return: The item list[n]
+    """
+    return copy(list[n])
+
+def replace_n_item_in_list(list: List[Any], n: int, item: Any) -> Any:
+    """
+    Get a list where the nth item is replaces by item
+    :param list: The list
+    :param n: The position index
+    :param item: The new item
+    :return: The updated list
+    """
+    list[n] = item
+    return [copy(o) for o in list]
+
+def index_of_first_item_in_list(list: List, value: Any) -> int | None:
+    """
+    Get the index n of the first time the value appears in the list
+    :param list: The list
+    :param value: The value to look for
+    :return: The index of the value in the list
+    """
+    try:
+        return list.index(value)
+    except ValueError:
+        return None
+
+def get_first_item(list: List[Any]) -> Any:
+    """
+    Gets the first item in the list
+    :param list: The list
+    :return: The first item
+    """
+    return copy(list[0])
+
+def get_last_item(list: List[Any]) -> Any:
+    """
+    Gets the last item in the list
+    :param list: The list
+    :return: The last item
+    """
+    return copy(list[-1])
+
+def get_all_but_first_item(list: List[Any]) -> Any:
+    """
+    Gets the all but the first item in the list
+    :param list: The list
+    :return: All but the first item
+    """
+    return [copy(i) for i in list[1:]]
+
+def get_all_but_last_item(list: List[Any]) -> Any:
+    """
+    Gets the all but the last item in the list
+    :param list: The list
+    :return: All but the last item
+    """
+    return [copy(i) for i in list[:-1]]
+
+def length_of_list(list: List[Any]) -> int:
+    """
+    Gets the length of the list
+    :param list: The list
+    :return: The length of the list
+    """
+    return len(list)
+
+def arange(size: int, start: int = 0, step: int = 1) -> range:
+    return range(start, size, step)
+# </editor-fold>
 
 # <editor-fold desc="Functions on Structure (Points, Distance2D, Vector, etc)">
 def make_new_point(x: int, y: int, z:int = 0) -> Point:
@@ -286,6 +354,33 @@ def multiply_vector(v: Vector, mult: int) -> Vector:
     return v * mult
 # </editor-fold>
 
+# <editor-fold desc="Functions to generate Objects">
+def generate_contiguous_colour_objects(canvas: Canvas) -> Canvas:
+    """
+    Takes the actual_pixels of the Canvas object and generates Objects from contiguous coloured pixels. So all touching
+    pixels with a specific colour become an Object. The generated Objects are added to the returned Canvas.
+    :param canvas: The Canvas with coloured actual_pixels array that needs to be broken into objects.
+    :return: The Canvas with the new Objects.
+    """
+    canvas.generate_contiguous_objects_by_colour()
+    return copy(canvas)
+
+def generate_contiguous_colour_objects_on_all_canvases(task : Task) -> Task:
+    task.generate_contiguous_objects_by_colour()
+    result = copy(task)
+    return result
+
+def generate_contiguous_objects(canvas: Canvas) -> Canvas:
+    """
+    Takes the actual_pixels of the Canvas object and generates Objects from contiguous pixels irrespective of their colour.
+    So all touching pixels no matter what their colour become an Object. The generated Objects are added to the returned Canvas.
+    :param canvas: The Canvas with coloured actual_pixels array that needs to be broken into objects.
+    :return: The Canvas with the new Objects.
+    """
+    canvas.generate_contiguous_objects()
+    return copy(canvas)
+# </editor-fold>
+
 
 # <editor-fold desc="Functions on Canvasses">
 def copy_canvas(canvas: Canvas) -> Canvas:
@@ -308,6 +403,8 @@ def make_new_canvas_as(canvas: Canvas) -> Canvas:
 def make_new_canvas(size: Dimension2D) -> Canvas:
     return Canvas(size=size)
 
+def get_all_objects_in_canvas(canvas: Canvas) -> List[Primitive]:
+    return [copy(o) for o in canvas.objects]
 
 def get_canvas_feature_size(canvas: Canvas) -> Dimension2D:
     return canvas.size
@@ -382,15 +479,12 @@ def get_tile_from_canvas_pos(canvas: Canvas, pixel: Point) -> Tuple[int, int] | 
 def get_canvas_pos_from_tile(canvas: Canvas, tile: Tuple[int, int]) -> Point:
     return canvas.grid_tiles_coordinates[tile]
 
-def generate_contiguous_colour_objects(canvas: Canvas) -> Canvas:
-    """
-    Takes the actual_pixels of the Canvas object and generates Objects from contiguous coloured pixels. So all touching
-    pixels with a specific colour become an Object. The generated Objects are added to the returned Canvas.
-    :param canvas: The Canvas with coloured actual_pixels array that needs to be broken into objects.
-    :return: The Canvas with the new Objects.
-    """
-    canvas.generate_contiguous_objects_by_colour()
-    return copy(canvas)
+def resize_canvas(canvas: Canvas, new_size: Dimension2D) -> Canvas:
+    objects = canvas.objects
+    canvas = make_new_canvas(new_size)
+    for o in objects:
+        canvas = add_object_to_canvas(canvas, copy(o))
+    return canvas
 # </editor-fold>
 
 
@@ -398,11 +492,6 @@ def generate_contiguous_colour_objects(canvas: Canvas) -> Canvas:
 def select_input_test_canvas(task: Task, test_id: int) -> Canvas:
     task.test_input_canvases[test_id]
     return copy(task)
-
-def generate_contiguous_colour_objects_on_all_canvases(task : Task) -> Task:
-    task.generate_contiguous_objects_by_colour()
-    result = copy(task)
-    return result
 # </editor-fold>
 
 
@@ -575,12 +664,18 @@ def get_object_feature_relative_point_position(obj: Primitive, relative_point: R
     return obj.relative_points[relative_point]
 
 
-def get_object_feature_position_of_colour(obj: Primitive, colour: int) -> Point | List[Point] | None:
+def get_object_feature_position_of_colour(obj: Primitive, colour: int) -> List[Point] | None:
+    """
+    Get the list of the positions (Points) of all the pixels of colour.
+    :param obj: The Object to look for the coloured pixels.
+    :param colour: The colour to look for.
+    :return: A list of the positions (Points) of all the pixels of colour. Even if there is only one pixel this is a list. None is there are no pixels with that colour
+    """
     positions = obj.get_coloured_pixels_positions(colour)
     if len(positions) == 0:
         return None
     elif len(positions) == 1:
-        return Point(x=positions[0][1], y=positions[0][0], z=obj.canvas_pos.z)
+        return [Point(x=positions[0][1], y=positions[0][0], z=obj.canvas_pos.z)]
     else:
         point_positions = []
         for p in positions:
@@ -840,7 +935,10 @@ def object_transform_flip_and_translate(obj: Primitive, axis: Orientation | Vect
 
 def object_transform_new_colour(obj: Primitive, colour: int) -> Primitive:
     new_obj = copy(obj)
-    new_obj.set_new_colour(new_colour=colour)
+    colours = get_object_feature_all_colours(new_obj)
+    for c in colours:
+        if c != colour:
+            new_obj.replace_colour(colour, c)
     return new_obj
 
 
@@ -906,14 +1004,105 @@ def object_transform_add_two_objects(obj_a: Primitive, obj_b: Primitive) -> Prim
 # </editor-fold>
 
 
-# <editor-fold desc="Functions to order Primitives">
-def order_objects_according_to_height(objects: List[Primitive], reverse: bool = False) -> List[Primitive]:
+# <editor-fold desc="Functions to order">
+def order_over_indices(things: List[Any], order_indices:List[int], reverse: bool = False) -> List[Primitive]:
+    """
+    Gets a list of anything (Objects, Points, etc) and returns a list of the same things but ordered according to the order_indices.
+    :param things: The list of things to order.
+    :param reverse: If True then reverse the order.
+    :return: The ordered list of the same things.
+    """
+    new_list = np.array(things)[order_indices]
+    return [copy(o) for o in new_list]
+
+def order_pixels_over_x(pixels: List[Point], reverse: bool = False) -> List[Point]:
+    """
+    Gets a list of Points and returns a list of the same Points but ordered according to their x position on the Canvas.
+    :param objects: The list of Points to order.
+    :param reverse: If True then reverse the order.
+    :return: The order list of the same Points.
+    """
+    x_positions  = []
+    for p in pixels:
+        x_positions.append(p.x)
+    indices = list(np.argsort(x_positions)) if not reverse else list(reversed(np.argsort(x_positions)))
+
+    new_list = np.array(pixels)[indices]
+    return [copy(p) for p in new_list]
+
+def order_pixels_over_y(pixels: List[Point], reverse: bool = False) -> List[Point]:
+    """
+  Gets a list of Objects and returns a list of the same Points but ordered according to their y position on the Canvas.
+  :param objects: The list of Points to order.
+  :param reverse: If True then reverse the order.
+  :return: The order list of the same Points.
+  """
+    y_positions  = []
+    for p in pixels:
+        y_positions.append(p.y)
+    indices = list(np.argsort(y_positions)) if not reverse else list(reversed(np.argsort(y_positions)))
+
+    new_list = np.array(pixels)[indices]
+    return [copy(p) for p in new_list]
+
+def order_pixels_over_z(pixels: List[Point], reverse: bool = False) -> List[Point]:
+    """
+  Gets a list of Objects and returns a list of the same Points but ordered according to their z (depth) position on the Canvas.
+  :param objects: The list of Points to order.
+  :param reverse: If True then reverse the order.
+  :return: The order list of the same Points.
+  """
+    z_positions  = []
+    for p in pixels:
+        z_positions.append(p.y)
+    indices = list(np.argsort(z_positions)) if not reverse else list(reversed(np.argsort(z_positions)))
+
+    new_list = np.array(pixels)[indices]
+    return [copy(p) for p in new_list]
+
+def order_objects_over_height(objects: List[Primitive], reverse: bool = False) -> List[Primitive]:
+    """
+    Gets a list of Objects and returns a list of the same Objects but ordered according to their height.
+    :param objects: The list of Objects to order.
+    :param reverse: If True then reverse the order.
+    :return: The order list of the same Objects.
+    """
     heights = []
     for o in objects:
         heights.append(o.dimensions.dy)
     indices = list(np.argsort(heights)) if not reverse else list(reversed(np.argsort(heights)))
+    new_list = np.array(objects)[indices]
+    return [copy(o) for o in new_list]
 
-    return list(np.array(objects)[indices])
+def order_objects_over_x(objects: List[Primitive], reverse: bool = False) -> List[Primitive]:
+    """
+    Gets a list of Objects and returns a list of the same Objects but ordered according to their x position on the Canvas.
+    :param objects: The list of Objects to order.
+    :param reverse: If True then reverse the order.
+    :return: The order list of the same Objects.
+    """
+    x_positions  = []
+    for o in objects:
+        x_positions.append(o.canvas_pos.x)
+    indices = list(np.argsort(x_positions)) if not reverse else list(reversed(np.argsort(x_positions)))
+
+    new_list = np.array(objects)[indices]
+    return [copy(o) for o in new_list]
+
+def order_objects_over_y(objects: List[Primitive], reverse: bool = False) -> List[Primitive]:
+    """
+  Gets a list of Objects and returns a list of the same Objects but ordered according to their y position on the Canvas.
+  :param objects: The list of Objects to order.
+  :param reverse: If True then reverse the order.
+  :return: The order list of the same Objects.
+  """
+    y_positions  = []
+    for o in objects:
+        y_positions.append(o.canvas_pos.y)
+    indices = list(np.argsort(y_positions)) if not reverse else list(reversed(np.argsort(y_positions)))
+
+    new_list = np.array(objects)[indices]
+    return [copy(o) for o in new_list]
 # </editor-fold>
 
 

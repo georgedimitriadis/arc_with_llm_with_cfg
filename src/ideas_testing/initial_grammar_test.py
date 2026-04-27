@@ -4,7 +4,7 @@ from structure.task.task import Task
 from model_interaction.model_interaction import ModelClient
 
 task_name = '05f2a901'
-data = load_data.load_task_data_as_pixels('05f2a901', with_white_background=False)
+data = load_data.load_task_data_as_pixels(task_name, with_white_background=False)
 
 task = Task(data)
 prompt = task.generate_prompt_for_llm()

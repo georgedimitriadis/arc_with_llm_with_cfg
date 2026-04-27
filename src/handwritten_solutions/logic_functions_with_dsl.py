@@ -10,6 +10,125 @@ from dsls.our_dsl.functions import dsl_functions as dsl
 from structure.task.task import Task
 
 
+# <editor-fold desc="05f2a901">
+def logic_function_05f2a901(in_canvas: Canvas) -> Canvas | None:
+    try:
+        in_canvas = dsl.generate_contiguous_colour_objects(in_canvas)
+        out_canvas = dsl.make_new_canvas_as(in_canvas)
+
+        moving_colour = 3
+        steady_colour = 9
+
+        moving = dsl.select_only_object_of_colour(in_canvas, colour=moving_colour)
+        staying = dsl.select_only_object_of_colour(in_canvas, colour=steady_colour)
+        dist = dsl.get_distance_touching_between_objects(moving, staying)
+
+        updated_moving = dsl.object_transform_translate_along_direction(moving, dist)
+        out_canvas = dsl.add_object_to_canvas(out_canvas, updated_moving)
+        out_canvas = dsl.add_object_to_canvas(out_canvas, staying)
+
+        return out_canvas
+    except:
+        return None
+
+def single_line_05f2a901(in_canvas:Canvas) -> Canvas:
+    return dsl.add_object_to_canvas(dsl.add_object_to_canvas(dsl.make_new_canvas_as(dsl.generate_contiguous_colour_objects(in_canvas)), dsl.object_transform_translate_along_direction(dsl.select_only_object_of_colour(dsl.generate_contiguous_colour_objects(in_canvas), 3),  dsl.get_distance_touching_between_objects(dsl.select_only_object_of_colour(dsl.generate_contiguous_colour_objects(in_canvas), 3), dsl.select_only_object_of_colour(dsl.generate_contiguous_colour_objects(in_canvas), 9)))), dsl.select_only_object_of_colour(dsl.generate_contiguous_colour_objects(in_canvas), 9))
+
+
+def logic_function_05f2a901_llm_result(input_canvas):
+    '''
+    ### Logic Explanation
+    By analyzing the three training pairs, a consistent spatial transformation emerges:
+    1. **Object Identification**: Each input contains exactly two non-black contiguous shapes: an **Azure (9)** block
+    and a **Red (3)** block. The Azure block acts as a stationary anchor, while the Red block is the moving agent.
+    2. **Pixel-to-Object Conversion**: The raw pixel arrays must first be parsed into discrete `Object` entities.
+    The function `generate_contiguous_colour_objects` handles this by grouping adjacent pixels of the same color.
+    3. **Distance Calculation**: We need to find the exact translation vector that will make the Red object share an
+    edge with the Azure object. `get_distance_touching_between_objects(mover, target)` computes this vector.
+    4. **Transformation**: The computed distance is applied to the Red object using `object_transform_translate_along_direction`,
+    producing a new translated `Object`.
+    5. **Rendering**: Since translations return new objects rather than mutating existing ones, we initialize a fresh
+    black canvas of the same dimensions using `make_new_canvas_as`. We then place both the translated Red object and the
+    stationary Azure object onto this new canvas using `add_object_to_canvas`.
+    This logic perfectly aligns with all three training examples:
+    - **Train 0**: Red is below Azure → moves **UP** to touch.
+    - **Train 1**: Red is left of Azure → moves **RIGHT** to touch.
+    - **Train 2**: Red is above Azure → moves **DOWN** to touch.
+    '''
+    # 1. Convert contiguous pixel groups into discrete Objects
+    canvas = dsl.generate_contiguous_colour_objects(input_canvas)
+
+    # 2. Identify the stationary target (Azure/9) and the moving object (Red/3)
+    target = dsl.select_only_object_of_colour(canvas, 9)
+    mover = dsl.select_only_object_of_colour(canvas, 3)
+
+    # 3. Calculate the exact translation vector for the mover to touch the target
+    translation = dsl.get_distance_touching_between_objects(mover, target)
+
+    # 4. Apply the translation to the mover, creating a new transformed Object
+    moved_mover = dsl.object_transform_translate_along_direction(mover, translation)
+
+    # 5. Initialize a fresh black canvas and render both objects onto it
+    output_canvas = dsl.make_new_canvas_as(canvas)
+    output_canvas = dsl.add_object_to_canvas(output_canvas, moved_mover)
+    output_canvas = dsl.add_object_to_canvas(output_canvas, target)
+
+    return output_canvas
+# </editor-fold>
+
+
+# <editor-fold desc="234bbc79">
+def logic_function_234bbc79(in_canvas: Canvas) -> Canvas | None:
+    try:
+        out_canvas = dsl.make_new_canvas_as(in_canvas)
+        temp_canvas = dsl.generate_contiguous_objects(in_canvas)
+        objects = dsl.get_all_objects_in_canvas(temp_canvas)
+        ordered_objects = dsl.order_objects_over_x(objects)
+        list_length = dsl.length_of_list(ordered_objects)
+        steps = dsl.subtract(list_length, 1)
+
+        for i in dsl.arange(steps):
+            o_before = dsl.get_item_n_from_list(ordered_objects, i)
+            next_index = dsl.sum(i, 1)
+            o_after = dsl.get_item_n_from_list(ordered_objects, next_index)
+
+            before_grey_pixels = dsl.get_object_feature_position_of_colour(o_before, 6)
+            before_grey_pixels = dsl.order_pixels_over_x(before_grey_pixels)
+            before_grey_pixel = dsl.get_last_item(before_grey_pixels)
+
+            after_grey_pixels = dsl.get_object_feature_position_of_colour(o_after, 6)
+            after_grey_pixels = dsl.order_pixels_over_x(after_grey_pixels)
+            after_grey_pixel = dsl.get_first_item(after_grey_pixels)
+
+            canvas_pos = dsl.get_object_feature_canvas_pos(o_after)
+            pos_pixel_diff = dsl.subtract_points(after_grey_pixel, canvas_pos)
+            one_right_point = dsl.make_new_point(1, 0, 0)
+            target_canvas_pos = dsl.sum_points(before_grey_pixel, one_right_point)
+            new_canvas_pos = dsl.subtract_points(target_canvas_pos, pos_pixel_diff)
+
+            o_after = dsl.object_transform_translate_to_point(o_after, new_canvas_pos)
+            ordered_objects = dsl.replace_n_item_in_list(ordered_objects, next_index, o_after)
+
+        for o in ordered_objects:
+            colours = dsl.get_object_feature_all_colours(o)
+            for colour in colours:
+                if dsl.not_equal(colour, 6):
+                    o = dsl.object_transform_new_colour(o, colour)
+            out_canvas = dsl.add_object_to_canvas(out_canvas, o)
+
+        last_obj_size = dsl.get_object_feature_size_x(o_after)
+        last_obj_x = dsl.get_object_feature_canvas_pos_x(o_after)
+        canvas_x_size = dsl.sum(last_obj_size, last_obj_x)
+        canvas_y_size = dsl.get_canvas_feature_size_y(out_canvas)
+        new_canvas_size = dsl.make_new_dimension2d(canvas_x_size, canvas_y_size)
+        out_canvas = dsl.resize_canvas(out_canvas, new_canvas_size)
+
+        return out_canvas
+    except:
+        return None
+# </editor-fold>
+
+# <editor-fold desc="Old Code">
 def logic_function_007bbfb7(in_canvas: Canvas) -> Canvas:
     in_canvas_size_x = dsl.get_canvas_feature_size_x(in_canvas)
     in_canvas_size_y = dsl.get_canvas_feature_size_y(in_canvas)
@@ -160,69 +279,7 @@ def logic_function_05f2a901_original(in_canvas: Canvas) -> Canvas | None:
     except:
         return None
 
-def logic_function_05f2a901(in_canvas: Canvas) -> Canvas | None:
-    try:
-        in_canvas = dsl.generate_contiguous_colour_objects(in_canvas)
-        out_canvas = dsl.make_new_canvas_as(in_canvas)
 
-        moving_colour = 3
-        steady_colour = 9
-
-        moving = dsl.select_only_object_of_colour(in_canvas, colour=moving_colour)
-        staying = dsl.select_only_object_of_colour(in_canvas, colour=steady_colour)
-        dist = dsl.get_distance_touching_between_objects(moving, staying)
-
-        updated_moving = dsl.object_transform_translate_along_direction(moving, dist)
-        out_canvas = dsl.add_object_to_canvas(out_canvas, updated_moving)
-        out_canvas = dsl.add_object_to_canvas(out_canvas, staying)
-
-        return out_canvas
-    except:
-        return None
-
-def single_line_05f2a901(in_canvas:Canvas) -> Canvas:
-    return dsl.add_object_to_canvas(dsl.add_object_to_canvas(dsl.make_new_canvas_as(dsl.generate_contiguous_colour_objects(in_canvas)), dsl.object_transform_translate_along_direction(dsl.select_only_object_of_colour(dsl.generate_contiguous_colour_objects(in_canvas), 3),  dsl.get_distance_touching_between_objects(dsl.select_only_object_of_colour(dsl.generate_contiguous_colour_objects(in_canvas), 3), dsl.select_only_object_of_colour(dsl.generate_contiguous_colour_objects(in_canvas), 9)))), dsl.select_only_object_of_colour(dsl.generate_contiguous_colour_objects(in_canvas), 9))
-
-
-def logic_function_05f2a901_llm_result(input_canvas):
-    '''
-    ### Logic Explanation
-    By analyzing the three training pairs, a consistent spatial transformation emerges:
-    1. **Object Identification**: Each input contains exactly two non-black contiguous shapes: an **Azure (9)** block
-    and a **Red (3)** block. The Azure block acts as a stationary anchor, while the Red block is the moving agent.
-    2. **Pixel-to-Object Conversion**: The raw pixel arrays must first be parsed into discrete `Object` entities.
-    The function `generate_contiguous_colour_objects` handles this by grouping adjacent pixels of the same color.
-    3. **Distance Calculation**: We need to find the exact translation vector that will make the Red object share an
-    edge with the Azure object. `get_distance_touching_between_objects(mover, target)` computes this vector.
-    4. **Transformation**: The computed distance is applied to the Red object using `object_transform_translate_along_direction`,
-    producing a new translated `Object`.
-    5. **Rendering**: Since translations return new objects rather than mutating existing ones, we initialize a fresh
-    black canvas of the same dimensions using `make_new_canvas_as`. We then place both the translated Red object and the
-    stationary Azure object onto this new canvas using `add_object_to_canvas`.
-    This logic perfectly aligns with all three training examples:
-    - **Train 0**: Red is below Azure → moves **UP** to touch.
-    - **Train 1**: Red is left of Azure → moves **RIGHT** to touch.
-    - **Train 2**: Red is above Azure → moves **DOWN** to touch.
-    '''
-    # 1. Convert contiguous pixel groups into discrete Objects
-    canvas = dsl.generate_contiguous_colour_objects(input_canvas)
-
-    # 2. Identify the stationary target (Azure/9) and the moving object (Red/3)
-    target = dsl.select_only_object_of_colour(canvas, 9)
-    mover = dsl.select_only_object_of_colour(canvas, 3)
-
-    # 3. Calculate the exact translation vector for the mover to touch the target
-    translation = dsl.get_distance_touching_between_objects(mover, target)
-
-    # 4. Apply the translation to the mover, creating a new transformed Object
-    moved_mover = dsl.object_transform_translate_along_direction(mover, translation)
-
-    # 5. Initialize a fresh black canvas and render both objects onto it
-    output_canvas = dsl.make_new_canvas_as(canvas)
-    output_canvas = dsl.add_object_to_canvas(output_canvas, moved_mover)
-    output_canvas = dsl.add_object_to_canvas(output_canvas, target)
-
-    return output_canvas
 
 def logic_function_06df4c85(in_canvas: Canvas) -> Canvas | None:
     try:
@@ -259,7 +316,7 @@ def logic_function_08ed6ac7(in_canvas: Canvas) -> Canvas | None:
     try:
         out_canvas = dsl.make_new_canvas_as(in_canvas)
         objects = dsl.select_all_objects(in_canvas)
-        ordered = dsl.order_objects_according_to_height(objects, reverse=False)
+        ordered = dsl.order_objects_over_height(objects, reverse=False)
         for i, o in enumerate(ordered):
             o = dsl.object_transform_new_colour(o, colours_in_order[i])
             out_canvas = dsl.add_object_to_canvas(out_canvas, o)
@@ -600,5 +657,6 @@ def logic_function_b775ac94(in_canvas: Canvas) -> Canvas | None:
         return canvas_out
     except:
         return None
+# </editor-fold>
 
 
