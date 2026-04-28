@@ -101,49 +101,10 @@ class Task:
             result += '\n'
         return result
 
-    def generate_prompt_for_llm(self):
-        prompt = (f'What follows is a series of arrays each representing an image with a low number of pixels. Each image\n'
-                  f'can range from 3x3 to 32x32 pixels. Each pixel can be one of ten possible colours.\n'
-                  f'Each pixel matters. There are {len(self.input_canvases)} training input - output pairs. There are two images for each training pair\n'
-                  f'denoted as Train Input N and Train Output N (where N is the number of the training pair).\n'
-                  f'All of the train pairs showcase a specific logic that if found and applied it will transform the input\n'
-                  f'image to the output one. I want you to generate the program that can do this transformation.\n'
-                  f'You have also been given a grammar to follow. Do a little bit of thinking and explain your logic \n'
-                  f'and then create a program that uses only the classes and functions described below. The program should\n'
-                  f'be formated as follows:\n'
-                  f'```\n'
-                  f'python\n'
-                  f'def solver(in_canvas):\n'
-                  f'    code\n'
-                  f'```\n\n'
-                  f"Here is a description of the allowed API:\n"
-                  f'The classes allowed are:\n'
-                  f'Canvas: An NxM image with exactly the same format as the input and output images given to you.\n'
-                  f'A Canvas also holds inside it separately Objects (see below). As these Objects update the Canvas\n'
-                  f'pixels also update.\n'
-                  f'Object: An KxL (smaller than NxM) image of pixels with a set of properties:\n'
-                  f'i) canvas_position: Where in a Canvas the bottom left pixel of the Object should be placed.\n'
-                  f'ii) colour: If the Objects pixels are all of the same colour this property is the int of that colour.\n'
-                  f'Distance: A vector that has magnitude (in pixels), direction (up, down, left , right, up-left, up-right\n'
-                  f'down-left, down-right) and an position (where the 0,0 of the vector is)\n'
-                  f'int: An integer.\n'
-                  f'The functions of the grammar are:\n'
-                  f'dsl.make_new_canvas_as(Canvas) -> Canvas: It makes a new Canvas with all pixels Black (1) of the same\n'
-                  f'size as the input Canvas.\n'
-                  f'dsl.add_object_to_canvas(Canvas Object) -> Canvas: It adds the Object onto the Canvas.\n'
-                  f'dsl.generate_contiguous_colour_objects(Canvas) -> Canvas: It takes a Canvas with some coloured pixels\n'
-                  f'but no Objects inside it and breaks up the contiguous groups of pixels with the same colour into\n'
-                  f'separate Objects that get added to the Canvas. This is the function that takes just pixels as given\n'
-                  f'by the problem and generates the Objects that all other functions will operate on\n.'
-                  f'dsl.select_only_object_of_colour(Canvas, int) -> Object: It returns the Object in the Canvas of colour int.\n'
-                  f'dsl.object_transform_translate_along_direction(Object, Distance) -> Object: It translates the Object along the\n'
-                  f'given Distance.\n'
-                  f'dsl.get_distance_touching_between_objects(Object1, Object2) -> Distance: It finds the Distance that Object1\n'
-                  f'needs to move to touch Object2.\n\n'
-                  f'The colour mapping is: \n{Colour.Black} = Black, {Colour.Blue} = Blue, {Colour.Red} = Red, \n'
-                  f'{Colour.Green} = Green, {Colour.Yellow} = Yellow, {Colour.Gray} = Gray, {Colour.Purple} = Purple,\n'
-                  f'{Colour.Orange} = Orange, {Colour.Azure} = Azure, {Colour.Burgundy} = Burgundy.\n\n'
-                  f'The images are:\n')
+
+    def get_task_arrays_for_llm_prompt(self) -> str:
+
+        prompt = f'The images are:\n'
         for i, (ic, oc) in enumerate(zip(self.input_canvases, self.output_canvases)):
             icp = ic.actual_pixels
             ocp = oc.actual_pixels

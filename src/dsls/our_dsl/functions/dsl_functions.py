@@ -6,6 +6,7 @@ import numpy as np
 
 from structure.canvas.canvas import Canvas
 from structure.geometry.basic_geometry import Point, Vector, Dimension2D, Surround, RelativePoint, Orientation, Colour
+from structure.object.object import Object
 from structure.object.primitives import Primitive, Predefined, Random, Parallelogram, Cross, Hole, Pi, InverseCross, \
     Dot, Angle, Diagonal, Steps, Fish, Bolt, Tie, Spiral, Pyramid, Maze
 from structure.task.task import Task
@@ -14,86 +15,189 @@ from structure.task.task import Task
 # <editor-fold desc="Math functions">
 def assign(a: int | float | bool | Point | Dimension2D | Primitive | Vector| Surround) -> \
         int | float | bool | Point | Dimension2D | Primitive | Vector| Surround:
+    """
+    Return a
+    :param a: a ->  int | float | bool | Point | Dimension2D | Primitive | Vector| Surround
+    :return: a -> int | float | bool | Point | Dimension2D | Primitive | Vector| Surround
+    """
     return a
 
 
-def sum(a: int | float, b: int | float) -> int | float:
+def summation(a: int | float, b: int | float) -> int | float:
+    """
+    Adds a and b
+    :param a: a -> int | float
+    :param b: b -> int | float
+    :return: a + b -> int | float
+    """
     return a + b
 
 
-def subtract(a: int | float, b: int | float) -> int | float:
+def subtraction(a: int | float, b: int | float) -> int | float:
+    """
+    Subtract b from a
+    :param a: a -> int | float
+    :param b: b -> int | float
+    :return: a - b -> int | float
+    """
     return a - b
 
 
-def multiply(a: int | float, b: int | float) -> int | float:
+def multiplication(a: int | float, b: int | float) -> int | float:
+    """
+    Multiply a with b
+    :param a: a -> int | float
+    :param b: b -> int | float
+    :return: a * b -> int | float
+    """
     return a * b
 
 
-def divide(a: int | float, b: int | float) -> int | float:
+def division(a: int | float, b: int | float) -> int | float:
+    """
+    Divide a by b
+    :param a: a -> int | float
+    :param b: b -> int | float
+    :return: a / b -> int | float
+    """
     return a / b
 
 
 def divide_to_int(a: int | float, b: int | float) -> int | float:
+    """
+    Divide a by b and floor to nearest int
+    :param a: a -> int | float
+    :param b: b -> int | float
+    :return: a//b -> int | float
+    """
     return a // b
 
 
 def modulo(a: int, b: int) -> int:
+    """
+    Returns the quotient of a / b
+    :param a: a -> int
+    :param b: b -> int
+    :return: a % b -> int
+    """
     return a % b
 
 
-def sign(a: int) -> int:
+def sign(a: int | float) -> int:
+    """
+    Get the sign of a
+    :param a: a -> int | float
+    :return: sign(a)  -> int
+    """
     return np.sign(a)
 
 
 def bigger_than(a: int | float, b: int | float) -> bool:
+    """
+    Return True if a is bigger than b else False
+    :param a: a -> int | float
+    :param b: b -> int | float
+    :return: a > b -> bool
+    """
     return a > b
 
 
 def bigger_than_or_equal(a: int | float, b: int | float) -> bool:
+    """
+    Return True if a is bigger than or equal to b else False
+    :param a: a -> int | float
+    :param b: b -> int | float
+    :return: a >= b -> bool
+    """
     return a >= b
 
 
 def equal(a: int | float | Point | Dimension2D | Vector, b: int | float | Point | Dimension2D | Vector) -> bool:
+    """
+    Return True if a is equal to b else False. This works not only for ints and floats but for Points, Dimension2Ds and Vectors
+    :param a: a -> int | float | Point | Dimension2D | Vector
+    :param b: b -> int | float | Point | Dimension2D | Vector
+    :return: a > b -> float
+    """
     return a == b
 
 
 def not_equal(a: int | float | Point | Dimension2D | Vector, b: int | float | Point | Dimension2D | Vector) -> bool:
+    """
+    Return True if a is not equal to b else False. This works not only for ints and floats but for Points, Dimension2Ds and Vectors
+    :param a: a -> int | float | Point | Dimension2D | Vector
+    :param b: b -> int | float | Point | Dimension2D | Vector
+    :return: a > b -> float
+    """
     return a != b
 
 
 def all_binary_combinations(array: List[Any]) -> List[Tuple[Any, Any]]:
+    """
+    Returns all possible pair combinations of the positions of the elements of a list.
+    :param array: The list of elements -> List[Any]
+    :return: A list of tuples, each tuple is a combination of two elements from the list -> List[Tuple[Any]]
+    """
     return list(combinations(array, 2))
 
 
-def intersect(array_a: Any, array_b: Any) -> List:
-    result = []
-    array_a = array_a if isinstance(array_a, list) else [array_a]
-    array_b = array_a if isinstance(array_b, list) else [array_b]
-    for a in array_a:
-        for b in array_b:
-            if a == b:
-                result.append(a)
+def intersection(a: Any, b: Any) -> List:
+    """
+    Gets the common elements in lists a and b. If a and, or b are not iterables they are turned to single element lists.
+    :param a: a -> Any
+    :param b: b -> Any
+    :return: The intersection of a and b -> List
+    """
+    a = a if isinstance(a, list) else [a]
+    b = a if isinstance(b, list) else [b]
+    result = set(a).intersection(set(b))
 
-    return result
+    return list(result)
+
+def difference(a: Any, b: Any) -> List:
+    """
+    Gets the non common elements in lists a and b. If a and, or b are not iterables they are turned to single element lists.
+    :param a: a -> Any
+    :param b: b -> Any
+    :return: The intersection of a and b -> List
+    """
+    a = a if isinstance(a, list) else [a]
+    b = a if isinstance(b, list) else [b]
+    result = set(a).difference(set(b))
+
+    return list(result)
+
+def union(a: Any, b: Any) -> List:
+    """
+    Gets the union (all elements from both lists) of a and b. If a and, or b are not iterables they are turned to single element lists.
+    :param a: a -> Any
+    :param b: b -> Any
+    :return: The intersection of a and b -> List
+    """
+    a = a if isinstance(a, list) else [a]
+    b = a if isinstance(b, list) else [b]
+    result = set(a).union(set(b))
+
+    return list(result)
 # </editor-fold>
 
 # <editor-fold desc="Functions on List selection)">
 def get_item_n_from_list(list: List[Any], n: int) -> Any:
     """
     Get the index item of the list
-    :param list: The list
-    :param n: The index
-    :return: The item list[n]
+    :param list: The list -> List[Any]
+    :param n: The index -> int
+    :return: The item list[n] -> Any
     """
     return copy(list[n])
 
 def replace_n_item_in_list(list: List[Any], n: int, item: Any) -> Any:
     """
     Get a list where the nth item is replaces by item
-    :param list: The list
-    :param n: The position index
-    :param item: The new item
-    :return: The updated list
+    :param list: The list -> List[Any]
+    :param n: The position index -> int
+    :param item: The new item -> Any
+    :return: The updated list  -> List[Any]
     """
     list[n] = item
     return [copy(o) for o in list]
@@ -151,15 +255,35 @@ def length_of_list(list: List[Any]) -> int:
     return len(list)
 
 def arange(size: int, start: int = 0, step: int = 1) -> range:
+    """
+    Returns the range of length size starting at start and stepping step
+    :param size: The length of the range -> int
+    :param start: The starting integer -> int
+    :param step: The stepping amount -> int
+    :return: A range -> range
+    """
     return range(start, size, step)
 # </editor-fold>
 
 # <editor-fold desc="Functions on Structure (Points, Distance2D, Vector, etc)">
 def make_new_point(x: int, y: int, z:int = 0) -> Point:
+    """
+    Create a new Point from x, y, z integers. If z is not given it defauls to 0.
+    :param x: The x coordinate -> int
+    :param y: The y coordinate -> int
+    :param z: The z coordinate -> int
+    :return: The Point (x,y,z) -> Point
+    """
     return Point(x, y, z)
 
 
 def make_new_dimension2d(dx: int, dy: int) -> Dimension2D:
+    """
+    Create a new Dimension2D from dx (width) and dy (height) integers
+    :param dx: Width -> int
+    :param dy: Height -> int
+    :return: The nw Dimension2D -> Dimension2D
+    """
     return Dimension2D(dx, dy)
 
 
@@ -214,12 +338,24 @@ def closest_point_to_point(origin: Point, targets: List[Point] | Point) -> Tuple
 
 
 def sum_points(first: Point, second: Point) -> Point:
+    """
+    Add two Points (first.x + second.x, first.y + second.y)
+    :param first: The first Point -> Point
+    :param second: The second Point -> Point
+    :return: The first + second Point -> Point
+    """
     f = copy(first)
     s = copy(second)
     return f + s
 
 
 def subtract_points(first: Point, second: Point) -> Point:
+    """
+    Subtract two Points (first.x - second.x, first.y - second.y)
+    :param first: The first Point -> Point
+    :param second: The second Point -> Point
+    :return: The first - second Point -> Point
+    """
     f = copy(first)
     s = copy(second)
     return f - s
@@ -377,8 +513,9 @@ def generate_contiguous_objects(canvas: Canvas) -> Canvas:
     :param canvas: The Canvas with coloured actual_pixels array that needs to be broken into objects.
     :return: The Canvas with the new Objects.
     """
-    canvas.generate_contiguous_objects()
-    return copy(canvas)
+    temp_canvas = copy(canvas)
+    temp_canvas.generate_contiguous_objects()
+    return temp_canvas
 # </editor-fold>
 
 
@@ -392,6 +529,12 @@ def copy_object(obj: Primitive) -> Primitive:
 
 
 def make_new_canvas_as(canvas: Canvas) -> Canvas:
+    """
+    Creates a new Canvas (no Objects and actual_pixels = 1) with the same size as canvas. It also copies onto the new Canvas
+    any grid that canvas might have.
+    :param canvas: The Canvas to copy the size of -> Canvas
+    :return: The new Canvas -> Canvas
+    """
     if canvas.grid:
         new_canvas = Canvas(as_grid_x_y_tilesize_colour=(canvas.grid_shape[0], canvas.grid_shape[1],
                                                          canvas.size_of_tiles, canvas.grid_colour))
@@ -401,20 +544,45 @@ def make_new_canvas_as(canvas: Canvas) -> Canvas:
 
 
 def make_new_canvas(size: Dimension2D) -> Canvas:
+    """
+    Creates a new Canvas (no Objects and actual_pixels = 1) with Canvas.size = size.
+    :param size: The size of the Canvas -> Dimension2D
+    :return: The new Canvas -> Canvas
+    """
     return Canvas(size=size)
 
 def get_all_objects_in_canvas(canvas: Canvas) -> List[Primitive]:
+    """
+    Returns all the Objects in the canvas as a List
+    :param canvas: The Canvas to get the Objects from -> Canvas
+    :return: A list of Objects in the Canvas -> List[Object]
+    """
     return [copy(o) for o in canvas.objects]
 
 def get_canvas_feature_size(canvas: Canvas) -> Dimension2D:
+    """
+    Returns the size of the Canvas as a Dimension2D
+    :param canvas: The Canvas to get the size of -> Canvas
+    :return: The size of the Canvas -> Dimension2D
+    """
     return canvas.size
 
 
 def get_canvas_feature_size_x(canvas: Canvas) -> int:
+    """
+    Returns the x element (width) of the size of the Canvas as an integer
+    :param canvas: The Canvas to get the size of -> Canvas
+    :return: The width of the Canvas -> int
+    """
     return canvas.size.dx
 
 
 def get_canvas_feature_size_y(canvas: Canvas) -> int:
+    """
+    Returns the y element (height) of the size of the Canvas as an integer
+    :param canvas: The Canvas to get the size of -> Canvas
+    :return: The height of the Canvas -> int
+    """
     return canvas.size.dy
 
 
@@ -447,7 +615,13 @@ def get_colour_common_to_all_objects(canvas: Canvas) -> int | List[int] | None:
     return common_colours
 
 
-def add_object_to_canvas(canvas: Canvas, obj: Primitive) -> Canvas:
+def add_object_to_canvas(canvas: Canvas, obj: Object) -> Canvas:
+    """
+    Adds the obj Object on the canvas Canvas (and makes sure it becomes part of the actual_pixels of the canvas)
+    :param canvas: The Canvas to add the obj to -> Canvas
+    :param obj: The Object to add -> Object
+    :return: The Canvas with the new Object added -> Canvas
+    """
     new_canvas = copy(canvas)
     new_obj = copy(obj)
     new_canvas.add_new_object(new_obj)
@@ -480,6 +654,12 @@ def get_canvas_pos_from_tile(canvas: Canvas, tile: Tuple[int, int]) -> Point:
     return canvas.grid_tiles_coordinates[tile]
 
 def resize_canvas(canvas: Canvas, new_size: Dimension2D) -> Canvas:
+    """
+    Resizes the Canvas to new_size
+    :param canvas: The Canvas to resize -> Canvas
+    :param new_size: The new size -> Dimension2D
+    :return: The resized Canvas -> Canvas
+    """
     objects = canvas.objects
     canvas = make_new_canvas(new_size)
     for o in objects:
@@ -619,31 +799,66 @@ def get_object_feature_colour(obj: Primitive) -> int:
     return obj.colour
 
 
-def get_object_feature_all_colours(obj: Primitive) -> List[int]:
+def get_object_feature_all_colours(obj: Object) -> List[int]:
+    """
+    Get a list of all the colours of the obj
+    :param obj: The Object to get the colours from -> Object
+    :return: The list of colours -> List[int]
+    """
     return list(obj.get_used_colours())
 
 
-def get_object_feature_size(obj: Primitive) -> Dimension2D:
+def get_object_feature_size(obj: Object) -> Dimension2D:
+    """
+    Returns the size of the object
+    :param obj: The Object to get the size of -> Object
+    :return: The size of the object -> Dimension2D
+    """
     return obj.dimensions
 
 
-def get_object_feature_size_x(obj: Primitive) -> int:
+def get_object_feature_size_x(obj: Object) -> int:
+    """
+    Returns the length (x) of the object
+    :param obj: The Object to get the length of -> Object
+    :return: The DImension2D.x of the object -> int
+    """
     return obj.dimensions.dx
 
 
-def get_object_feature_size_y(obj: Primitive) -> int:
+def get_object_feature_size_y(obj: Object) -> int:
+    """
+    Returns the height (y) of the Object
+    :param obj: The Object to get the height of -> Object
+    :return: The Dimension2D.y of the object -> int
+    """
     return obj.dimensions.dy
 
 
-def get_object_feature_canvas_pos(obj: Primitive) -> Point:
+def get_object_feature_canvas_pos(obj: Object) -> Point:
+    """
+    Gets the obj canvas position (the bottom left corner of the rectangle that defines the Object)
+    :param obj: The Object -> Object
+    :return: The canvas_pos Point -> Point
+    """
     return obj.canvas_pos
 
 
 def get_object_feature_canvas_pos_x(obj: Primitive) -> int:
+    """
+    Gets the obj x element (horizontal) of the canvas position (the bottom left corner of the rectangle that defines the Object)
+    :param obj: The Object -> Object
+    :return: The canvas_pos.x -> int
+    """
     return obj.canvas_pos.x
 
 
 def get_object_feature_canvas_pos_y(obj: Primitive) -> int:
+    """
+    Gets the obj y element (vertical) of the canvas position (the bottom left corner of the rectangle that defines the Object)
+    :param obj: The Object -> Object
+    :return: The canvas_pos.y -> int
+    """
     return obj.canvas_pos.y
 
 
@@ -832,8 +1047,16 @@ def object_transform_rotate(obj: Primitive, rotation: int) -> Primitive:
     return new_obj
 
 
-def object_transform_translate_to_point(obj: Primitive, target_point: Point,
-                                        object_point: Point | None = None) -> Primitive:
+def object_transform_translate_to_point(obj: Object, target_point: Point,
+                                        object_point: Point | None = None) -> Object:
+    """
+    Translates an Object to a new position by moving the object_point Point to the target_point Point. If the
+    object_point is None then the object_point becomes the canvas_pos Point of the obj.
+    :param obj: The obj to translate -> Object
+    :param target_point: The Point to translate the object_point to -> Point
+    :param object_point: The Point in the Object (either the canvas_pos or another Point) to translate to the target_point -> Point
+    :return: The translated Object -> Object
+    """
     new_obj = copy(obj)
     new_obj.translate_to_coordinates(target_point=target_point, object_point=object_point)
     return new_obj
@@ -933,7 +1156,13 @@ def object_transform_flip_and_translate(obj: Primitive, axis: Orientation | Vect
     return new_obj
 
 
-def object_transform_new_colour(obj: Primitive, colour: int) -> Primitive:
+def object_transform_new_colour(obj: Primitive, colour: int) -> Object:
+    """
+    Makes all the non black pixels of an object that colour.
+    :param obj: The Object to transform
+    :param colour: The colour
+    :return: The transformed Object
+    """
     new_obj = copy(obj)
     colours = get_object_feature_all_colours(new_obj)
     for c in colours:

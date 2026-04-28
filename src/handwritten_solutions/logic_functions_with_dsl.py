@@ -85,11 +85,11 @@ def logic_function_234bbc79(in_canvas: Canvas) -> Canvas | None:
         objects = dsl.get_all_objects_in_canvas(temp_canvas)
         ordered_objects = dsl.order_objects_over_x(objects)
         list_length = dsl.length_of_list(ordered_objects)
-        steps = dsl.subtract(list_length, 1)
+        steps = dsl.subtraction(list_length, 1)
 
         for i in dsl.arange(steps):
             o_before = dsl.get_item_n_from_list(ordered_objects, i)
-            next_index = dsl.sum(i, 1)
+            next_index = dsl.summation(i, 1)
             o_after = dsl.get_item_n_from_list(ordered_objects, next_index)
 
             before_grey_pixels = dsl.get_object_feature_position_of_colour(o_before, 6)
@@ -100,13 +100,9 @@ def logic_function_234bbc79(in_canvas: Canvas) -> Canvas | None:
             after_grey_pixels = dsl.order_pixels_over_x(after_grey_pixels)
             after_grey_pixel = dsl.get_first_item(after_grey_pixels)
 
-            canvas_pos = dsl.get_object_feature_canvas_pos(o_after)
-            pos_pixel_diff = dsl.subtract_points(after_grey_pixel, canvas_pos)
             one_right_point = dsl.make_new_point(1, 0, 0)
-            target_canvas_pos = dsl.sum_points(before_grey_pixel, one_right_point)
-            new_canvas_pos = dsl.subtract_points(target_canvas_pos, pos_pixel_diff)
-
-            o_after = dsl.object_transform_translate_to_point(o_after, new_canvas_pos)
+            target_point = dsl.sum_points(before_grey_pixel, one_right_point)
+            o_after = dsl.object_transform_translate_to_point(o_after, target_point, after_grey_pixel)
             ordered_objects = dsl.replace_n_item_in_list(ordered_objects, next_index, o_after)
 
         for o in ordered_objects:
@@ -118,7 +114,7 @@ def logic_function_234bbc79(in_canvas: Canvas) -> Canvas | None:
 
         last_obj_size = dsl.get_object_feature_size_x(o_after)
         last_obj_x = dsl.get_object_feature_canvas_pos_x(o_after)
-        canvas_x_size = dsl.sum(last_obj_size, last_obj_x)
+        canvas_x_size = dsl.summation(last_obj_size, last_obj_x)
         canvas_y_size = dsl.get_canvas_feature_size_y(out_canvas)
         new_canvas_size = dsl.make_new_dimension2d(canvas_x_size, canvas_y_size)
         out_canvas = dsl.resize_canvas(out_canvas, new_canvas_size)
@@ -132,8 +128,8 @@ def logic_function_234bbc79(in_canvas: Canvas) -> Canvas | None:
 def logic_function_007bbfb7(in_canvas: Canvas) -> Canvas:
     in_canvas_size_x = dsl.get_canvas_feature_size_x(in_canvas)
     in_canvas_size_y = dsl.get_canvas_feature_size_y(in_canvas)
-    out_canvas_size_x = dsl.multiply(in_canvas_size_x, in_canvas_size_x)
-    out_canvas_size_y = dsl.multiply(in_canvas_size_y, in_canvas_size_y)
+    out_canvas_size_x = dsl.multiplication(in_canvas_size_x, in_canvas_size_x)
+    out_canvas_size_y = dsl.multiplication(in_canvas_size_y, in_canvas_size_y)
     out_canvas_size = dsl.make_new_dimension2d(out_canvas_size_x, out_canvas_size_y)
     out_canvas = dsl.make_new_canvas(size=out_canvas_size)
 
@@ -179,7 +175,7 @@ def logic_function_017c7c7b(in_canvas: Canvas) -> Canvas:
     out_canvas = dsl.add_object_to_canvas(out_canvas, obj)
     out_canvas = dsl.add_object_to_canvas(out_canvas, obj_top)
 
-    top_point = dsl.make_new_point(0, dsl.divide(dsl.get_canvas_feature_size_y(in_canvas), 2), 0)
+    top_point = dsl.make_new_point(0, dsl.division(dsl.get_canvas_feature_size_y(in_canvas), 2), 0)
     obj = dsl.object_transform_translate_to_point(obj, top_point)
     out_canvas = dsl.add_object_to_canvas(out_canvas, obj)
     dsl.get_point_and_rotation_for_best_match_to_objects(obj, [obj], match_shape_only=True)
@@ -380,7 +376,7 @@ def logic_function_0a938d79(in_canvas: Canvas) -> Canvas | None:
                 canvas_pos = dsl.make_new_point(x=x_pos, y=0)
 
                 dist = dsl.get_along_x_distance_between_objects(objects[0], objects[1])
-                times = dsl.divide_to_int(dsl.subtract(dsl.get_canvas_feature_size_x(in_canvas), x_pos),
+                times = dsl.divide_to_int(dsl.subtraction(dsl.get_canvas_feature_size_x(in_canvas), x_pos),
                                           dsl.get_length_of_vector(dist))
             else:
                 width = dsl.get_canvas_feature_size_x(in_canvas)
@@ -591,7 +587,7 @@ def logic_function_137eaa0f(in_canvas: Canvas) -> Canvas | None:
         colour_large = dsl.get_object_feature_least_used_colour(largest)
         smallest = dsl.select_smallest_object_by_area(in_canvas)
         colour_small = dsl.get_object_feature_least_used_colour(smallest)
-        colour = dsl.select_from_list(dsl.intersect(colour_small, colour_large), 0)
+        colour = dsl.select_from_list(dsl.intersection(colour_small, colour_large), 0)
         target_pos = dsl.get_object_feature_position_of_colour(largest, colour)
         others = dsl.select_rest_of_the_objects(in_canvas, largest)
 
@@ -617,12 +613,12 @@ def logic_function_150deff5(in_canvas: Canvas) -> Canvas | None:
         all_objects = dsl.select_all_objects(in_canvas)
         large_area = dsl.assign(0)
         for o in all_objects:
-            obj_area = dsl.multiply(dsl.get_object_feature_size_x(o), dsl.get_object_feature_size_x(o))
+            obj_area = dsl.multiplication(dsl.get_object_feature_size_x(o), dsl.get_object_feature_size_x(o))
             if dsl.bigger_than(obj_area, large_area):
                 large_area = obj_area
 
         for o in all_objects:
-            obj_area = dsl.multiply(dsl.get_object_feature_size_x(o), dsl.get_object_feature_size_x(o))
+            obj_area = dsl.multiplication(dsl.get_object_feature_size_x(o), dsl.get_object_feature_size_x(o))
             if obj_area == large_area:
                 o = dsl.object_transform_new_colour(obj=o, colour=colours[1])
             else:
