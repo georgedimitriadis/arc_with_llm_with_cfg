@@ -1,6 +1,8 @@
 import inspect
 import json
+import os
 from pathlib import Path
+from os.path import join
 from types import ModuleType
 from typing import List
 
@@ -10,9 +12,9 @@ import threading
 import atexit
 import requests
 from subprocess import Popen
+import shutil
 
 from structure.canvas.canvas import Canvas
-from dsls.our_dsl.functions import dsl_functions as dsl
 from structure.geometry.basic_geometry import Colour
 from structure.task.task import Task
 
@@ -91,7 +93,9 @@ class ModelClient:
         }
     ]
 
-    def __init__(self, system_content:str = "You are a helpful coding assistant.",
+    def __init__(self,
+                 base_repo_folder: Path = Path(r'G:\Code\Repos\Mine\Machine_Learning\ARC\arc_with_llm_with_cfg'),
+                 system_content:str = "You are a helpful coding assistant.",
                  grammar_file: str | None = None,
                  sandbox_dir: str | Path = "./sandbox",
                  code_timeout: int = 5,
@@ -107,16 +111,18 @@ class ModelClient:
         self.sandbox_dir.mkdir(parents=True, exist_ok=True)
         self.code_timeout = code_timeout
         self.temperature = temperature
+        self.base_repo_folder = base_repo_folder
 
         self.server_process = None
         self.messages = [{'role': 'system', 'content': system_content}]
         self.context = ""
         self.response = ""
+        self.iteration = 0
         atexit.register(self.kill_llama_server)
 
     def initialise_llama_server(self):
         if self.server_process is None:
-            self.server_process = Popen(r'G:\Code\Repos\Mine\Machine_Learning\ARC\arc_with_llm_with_cfg\src\model_interaction\windows_llm_server_startup.bat',
+            self.server_process = Popen(join(self.base_repo_folder, 'src', 'model_interaction', 'windows_llm_server_startup.bat'),
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.STDOUT,  # merge stderr into stdout
                                         text=True,
@@ -137,6 +143,7 @@ class ModelClient:
             server_ready.wait(timeout=60)  # blocks until string is found, or 60s timeout
             if server_ready.is_set():
                 print("------- Llama server is ready ---------")
+                self.copy_dsl_into_sandbox()
             else:
                 print("------- Timed out waiting for Llama server -------")
         else:
@@ -159,9 +166,15 @@ class ModelClient:
             raise PermissionError(f"Path '{filename}' escapes the sandbox.")
         return target
 
+    def copy_dsl_into_sandbox(self):
+        shutil.copy(join(self.base_repo_folder, 'src', 'dsls', 'our_dsl', 'functions', 'dsl_functions.py'),
+                    join(self.base_repo_folder, 'src', 'llm_sandbox', 'dsl_functions.py'))
+
     # ── Tool Implementations ───────────────────────────────────────────────────
 
     def _tool_run_python(self, code: str) -> str:
+        print('---CALLING run_python ---')
+        environment = os.environ.copy()
         try:
             result = subprocess.run(
                 ["python", "-c", code],
@@ -169,6 +182,7 @@ class ModelClient:
                 text=True,
                 timeout=self.code_timeout,
                 cwd=self.sandbox_dir,
+                env=environment
             )
             out = result.stdout
             if result.stderr:
@@ -180,6 +194,7 @@ class ModelClient:
             return f"[error] {e}"
 
     def _tool_write_file(self, filename: str, content: str) -> str:
+        print('---CALLING write_file ---')
         try:
             path = self._safe_path(filename)
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -191,6 +206,7 @@ class ModelClient:
             return f"[error] {e}"
 
     def _tool_read_file(self, filename: str) -> str:
+        print('---CALLING read_file ---')
         try:
             path = self._safe_path(filename)
             if not path.exists():
@@ -224,6 +240,102 @@ class ModelClient:
 
     # ── API Calls ──────────────────────────────────────────────────────────────
 
+    def _post_streaming(self, extra: dict | None = None):
+        """
+        POST to the model with streaming enabled.
+        Yields raw SSE data lines as they arrive.
+        """
+        payload = {"messages": self.messages,
+                   "temperature": 0.6,
+                   "stream": True,
+                   "chat_template_kwargs": {"enable_thinking": False}}
+        if self.grammar is not None:
+            payload["grammar"] = self.grammar
+        if extra:
+            payload.update(extra)
+
+        response = requests.post(self.URL, json=payload, stream=True, timeout=120)
+        response.raise_for_status()
+        return response
+
+    def _consume_stream(self, response, verbose: bool = True) -> dict:
+        """
+        Read a streaming SSE response, print text tokens as they arrive,
+        and accumulate the full message (including tool calls) to return.
+
+        Returns a dict shaped like a non-streaming choices[0]["message"].
+        """
+        accumulated_text = ""
+        tool_calls_map = {}  # index -> {id, name, arguments_so_far}
+        finish_reason = None
+
+        for raw_line in response.iter_lines():
+            if not raw_line:
+                continue
+
+            line = raw_line.decode("utf-8") if isinstance(raw_line, bytes) else raw_line
+
+            if not line.startswith("data: "):
+                continue
+
+            data = line[len("data: "):]
+
+            if data.strip() == "[DONE]":
+                break
+
+            try:
+                chunk = json.loads(data)
+            except json.JSONDecodeError:
+                continue
+
+            choice = chunk.get("choices", [{}])[0]
+            delta = choice.get("delta", {})
+            finish_reason = choice.get("finish_reason") or finish_reason
+
+            # ── Stream text content live ───────────────────────────────────────
+            text_piece = delta.get("content") or ""
+            if text_piece:
+                accumulated_text += text_piece
+                if verbose:
+                    print(text_piece, end="", flush=True)
+
+            # ── Accumulate tool call deltas ────────────────────────────────────
+            for tc_delta in delta.get("tool_calls") or []:
+                idx = tc_delta.get("index", 0)
+
+                if idx not in tool_calls_map:
+                    tool_calls_map[idx] = {"id": "", "name": "", "arguments": ""}
+
+                if tc_delta.get("id"):
+                    tool_calls_map[idx]["id"] = tc_delta["id"]
+
+                fn = tc_delta.get("function", {})
+                if fn.get("name"):
+                    tool_calls_map[idx]["name"] += fn["name"]
+                if fn.get("arguments"):
+                    tool_calls_map[idx]["arguments"] += fn["arguments"]
+
+        if verbose and accumulated_text:
+            print()  # newline after streamed text
+
+        # ── Reconstruct a message dict matching the non-streaming shape ────────
+        message = {"role": "assistant", "content": accumulated_text or None}
+
+        if tool_calls_map:
+            message["tool_calls"] = [
+                {
+                    "id": tc["id"],
+                    "type": "function",
+                    "function": {
+                        "name": tc["name"],
+                        "arguments": tc["arguments"],
+                    }
+                }
+                for tc in tool_calls_map.values()
+            ]
+
+        return message
+
     def _post(self, extra: dict | None = None) -> dict:
         """Base POST to the model. Merges any extra fields into the payload."""
         payload = {"messages": self.messages, "temperature": self.temperature}
@@ -256,16 +368,19 @@ class ModelClient:
         self.messages.append({"role": "user", "content": question})
 
         final_reply = ""
+
         while True:
-            choice = self._post(extra={"tools": self.TOOLS, "tool_choice": "auto"})
-            msg = choice["message"]
+            self.iteration +=1
+            if verbose:
+                print(f"\n[turn {self.iteration}] ", end="", flush=True)
+
+            response = self._post_streaming(
+                extra={"tools": self.TOOLS, "tool_choice": "auto"}
+            )
+            msg = self._consume_stream(response, verbose=verbose)
             tool_calls = msg.get("tool_calls") or []
 
-            # Always append the assistant turn to history
             self.messages.append(msg)
-
-            if msg.get("content") and verbose:
-                print(f"\nQwen: {msg['content']}")
 
             if not tool_calls:
                 # Model is done — no more tool calls
@@ -341,30 +456,30 @@ class ModelClient:
             f'Each pixel matters. There are {len(task.input_canvases)} training input - output pairs. There are two images for each training pair\n'
             f'denoted as Train Input N and Train Output N (where N is the number of the training pair).\n'
             f'All of the train pairs showcase a specific logic that if found and applied it will transform the input\n'
-            f'image to the output one. I want you to generate the program that can do this transformation.\n'
-            f'{grammar}Do a little bit of thinking and explain your logic \n'
-            f'and then create a function called solver that uses only the classes and functions described in the API below.\n'
-            f'For the solver function you are only allowed to use the API functions, and python if, for and while loops \n'
+            f'image to the output one. I want you to generate the program that can do this transformation.\n\n'
+            f'{grammar}\n'
+            f'Create a function called solver that out of all the allowed functions in the dsl_functions.py script it uses \n'
+            f'the functions described below. In the below description you will also find the docstrings of the functions.\n'
+            f'For the solver function you are only allowed to use the allowed functions, and python if, for and while loops \n'
             f'and nothing else. The only other python keywords in the solver function should be the def and the return keywords.\n'
-            f'You are allowed to create new variables but they should always equal an API function. All API functions\n'
+            f'You are allowed to create new variables but they should always equal a function. All functions\n'
             f'return something. Treat this as a functional paradigm code. \n'
-            f'The solver function should be surrounded with #---Begin Solver---\n'
-            f'and with #---End Solver---\n comments. After the solver function you can write any other code to help you\n'
-            f'understand if the solver is working or not.\n'
-            f'The whole script should be formated as follows:\n'
-            f'```\n'
-            f'python\n'
+            f'The solver function should be surrounded with #---Begin Solver---\\n and with #---End Solver---\\n comments.\n'
+            f'After the solver function you can write any other code to help you understand if the solver is working or not.\n'
+            f'The whole script should be formated as follows:\n\n'
             f'# Here goes all the required imports\n'
-            f'from dsls.our_dsl.functions import dsl_functions as dsl\n\n'
             f'#---Begin Solver---\n'
             f'def solver(in_canvas):\n'
             f'  # Here goes the code for the solver function\n'
             f'  return out_canvas\n'
             f'#---End Solver---\n\n'
             f'# Here goes any other code to test the solver function\n'
-            f'```\n\n'
-            f"Here is a description of the allowed API:\n"
-            f'The classes allowed are:\n'
+            f'\n\n'
+            f'As mentioned in the RULES you are not to print out any of that code. You are to create a script in the sandbox,\n'
+            f'write the code there using the write_file tool, use the run_python tool to run it, test if it is correct and\n'
+            f'report the results. Stop once you have a solver that creates a correct out_canvas.\n'
+            f"Here is a description of the allowed functions (and the classes they operate on):\n"
+            f'The classes used are:\n'
             f'Canvas: An NxM image with exactly the same format as the input and output images given to you.\n'
             f'A Canvas also holds inside it separately Objects (see below). As these Objects update the Canvas\n'
             f'pixels also update.\n'
@@ -376,7 +491,7 @@ class ModelClient:
             f'Point: A two integer tuple denoting the coordinates of a pixel on a Canvas. The first number is the x (horizontal)\n'
             f'coordinate and the second the y (vertical).\n'
             f'int: An integer.\n\n'
-            f'The functions of the grammar are:\n')
+            f'Out of the functions in the dsl_functions.py the ones allowed are:\n')
 
         prompt += ModelClient.get_docstrings(module=dsl_module, function_names=used_dsl_funcs)
 
