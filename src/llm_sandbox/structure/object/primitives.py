@@ -9,14 +9,14 @@ from random import randrange
 import numpy as np
 from numpy.random import shuffle
 
-from structure import constants as const
+from llm_sandbox.structure import constants as const
 from typing import List, Dict, Tuple
 from enum import Enum
 from scipy import ndimage as ndi
 
-from structure.geometry.probabilities import DistributionOver_ObjectTypes
-from structure.object.object import Object
-from structure.geometry.basic_geometry import Point, Bbox, Dimension2D, Orientation, Surround, Vector, Colour
+from llm_sandbox.structure.geometry.probabilities import DistributionOver_ObjectTypes
+from llm_sandbox.structure.object.object import Object
+from llm_sandbox.structure.geometry.basic_geometry import Point, Bbox, Dimension2D, Orientation, Surround, Vector, Colour
 
 MAX_PAD_SIZE = const.MAX_PAD_SIZE
 

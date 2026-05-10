@@ -1,0 +1,87 @@
+# ── Top level ──────────────────────────────────────────────────────────────────
+
+root ::= import-line "\n" comment-lines function-def
+
+import-line ::= "import dsl_functions as dsl"
+
+# ── Comments ───────────────────────────────────────────────────────────────────
+
+# A single comment line at any indentation level
+comment-line ::= sp0 "# " comment-text "\n"
+
+# Zero or more comment lines together (used to allow comment blocks anywhere)
+comment-lines ::= comment-line*
+
+# Comment text: any characters except newline
+comment-text ::= [^\n]*
+
+# ── Function definition ────────────────────────────────────────────────────────
+
+# Function name is fixed to "solver"
+function-def ::= "def solver(" param-list "):\n" func-body
+
+# Body: optional comments, then statements, then a mandatory return
+func-body ::= (comment-lines top-stmt)* comment-lines sp1 return-stmt inline-comment? "\n"
+
+# ── Top-level statements (single indent) ──────────────────────────────────────
+
+top-stmt ::= sp1 assignment inline-comment? "\n"
+           | sp1 if-stmt
+           | sp1 for-stmt
+           | comment-line
+
+# ── If / else ─────────────────────────────────────────────────────────────────
+
+if-stmt ::= "if " dsl-call ":" inline-comment? "\n" inner-body
+            (sp1 "else:" inline-comment? "\n" inner-body)?
+
+# ── For loop ──────────────────────────────────────────────────────────────────
+
+for-stmt ::= "for " var-name " in " iterable ":" inline-comment? "\n" inner-body
+
+# ── Inner body (double indent, inside if/else/for) ────────────────────────────
+
+inner-body ::= inner-stmt+
+
+inner-stmt ::= sp2 assignment inline-comment? "\n"
+             | sp2 return-stmt inline-comment? "\n"
+             | comment-line
+
+# ── Statements ────────────────────────────────────────────────────────────────
+
+assignment  ::= var-name " = " rhs
+
+rhs ::= dsl-call | var-name
+
+return-stmt ::= "return " var-name
+
+# ── Inline comments (appended to the end of a statement line) ─────────────────
+
+inline-comment ::= "  # " comment-text
+
+# ── Expressions ───────────────────────────────────────────────────────────────
+
+dsl-call ::= "dsl." identifier "(" arg-list ")"
+
+arg-list ::= (var-name ("," " " var-name)*)?
+
+iterable ::= dsl-call | var-name
+
+# ── Identifiers and variable names ────────────────────────────────────────────
+
+var-name ::= !keyword identifier
+
+keyword ::= "import" | "def" | "for" | "if" | "else" | "in" | "return"
+          | "and" | "or" | "not" | "True" | "False" | "None"
+          | "while" | "class" | "try" | "except" | "with" | "as"
+          | "pass" | "break" | "continue" | "lambda" | "yield"
+          | "raise" | "del" | "global" | "nonlocal" | "assert"
+          | "from" | "is"
+
+identifier ::= [a-zA-Z_] [a-zA-Z0-9_]*
+
+# ── Indentation ───────────────────────────────────────────────────────────────
+
+sp0 ::= " "*          # any leading spaces — for free-floating comment lines
+sp1 ::= "    "        # single indent (4 spaces)
+sp2 ::= "        "    # double indent (8 spaces)

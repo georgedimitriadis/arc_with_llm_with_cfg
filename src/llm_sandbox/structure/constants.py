@@ -1,0 +1,9 @@
+
+
+MIN_PAD_SIZE = 3
+MAX_PAD_SIZE = 32
+MAX_EXAMPLE_PAIRS = 10
+MAX_NUM_OF_CANVAS_OBJECTS = 20
+
+BAD_TRAIN_DATA = ['bda2d7a6', 'd511f180', 'd4f3cd78', 'd4a91cb9', 'd4469b4b', 'd5d6de2d', 'dc433765', 'e9614598']
+BAD_EVAL_DATA = ['12997ef3', '1d398264', '4852f2fa', '9b4c17c4', 'c074846d', 'e21a174a', 'ff72ca3e']

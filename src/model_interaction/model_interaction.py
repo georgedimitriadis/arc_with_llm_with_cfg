@@ -99,7 +99,7 @@ class ModelClient:
                  grammar_file: str | None = None,
                  sandbox_dir: str | Path = "./sandbox",
                  code_timeout: int = 5,
-                 temperature = 0.7):
+                 temperature = 0.5):
 
         self.URL = "http://127.0.0.1:8080/v1/chat/completions"
         if grammar_file is not None:
@@ -246,7 +246,7 @@ class ModelClient:
         Yields raw SSE data lines as they arrive.
         """
         payload = {"messages": self.messages,
-                   "temperature": 0.6,
+                   "temperature": 0.7,
                    "stream": True,
                    "chat_template_kwargs": {"enable_thinking": False}}
         if self.grammar is not None:
@@ -254,7 +254,7 @@ class ModelClient:
         if extra:
             payload.update(extra)
 
-        response = requests.post(self.URL, json=payload, stream=True, timeout=120)
+        response = requests.post(self.URL, json=payload, stream=True, timeout=1200)
         response.raise_for_status()
         return response
 
@@ -394,14 +394,14 @@ class ModelClient:
 
                 if verbose:
                     arg_preview = ", ".join(
-                        f"{k}={repr(v)[:1000]}" for k, v in fn_args.items()
+                        f"{k}={repr(v)[:5000]}" for k, v in fn_args.items()
                     )
                     print(f"\n  ▶ tool: {fn_name}({arg_preview})")
 
                 result = self._dispatch_tool(fn_name, fn_args)
 
                 if verbose:
-                    preview = result[:1000] + ("..." if len(result) > 1000 else "")
+                    preview = result[:5000] + ("..." if len(result) > 5000 else "")
                     print(f"  ◀ result: {preview}")
 
                 self.messages.append({
@@ -446,59 +446,3 @@ class ModelClient:
 
         return docstring + "\n"
 
-    def generate_prompt_for_task_and_dsl_funcs(self, task: Task, dsl_module: ModuleType, used_dsl_funcs: List[str] | None = None) -> str:
-        grammar = ''
-        if self.grammar:
-            grammar = 'You have also been given a grammar to follow. '
-        prompt = (
-            f'What follows is a series of arrays each representing an image with a low number of pixels. Each image\n'
-            f'can range from 3x3 to 32x32 pixels. Each pixel can be one of ten possible colours.\n'
-            f'Each pixel matters. There are {len(task.input_canvases)} training input - output pairs. There are two images for each training pair\n'
-            f'denoted as Train Input N and Train Output N (where N is the number of the training pair).\n'
-            f'All of the train pairs showcase a specific logic that if found and applied it will transform the input\n'
-            f'image to the output one. I want you to generate the program that can do this transformation.\n\n'
-            f'{grammar}\n'
-            f'Create a function called solver that out of all the allowed functions in the dsl_functions.py script it uses \n'
-            f'the functions described below. In the below description you will also find the docstrings of the functions.\n'
-            f'For the solver function you are only allowed to use the allowed functions, and python if, for and while loops \n'
-            f'and nothing else. The only other python keywords in the solver function should be the def and the return keywords.\n'
-            f'You are allowed to create new variables but they should always equal a function. All functions\n'
-            f'return something. Treat this as a functional paradigm code. \n'
-            f'The solver function should be surrounded with #---Begin Solver---\\n and with #---End Solver---\\n comments.\n'
-            f'After the solver function you can write any other code to help you understand if the solver is working or not.\n'
-            f'The whole script should be formated as follows:\n\n'
-            f'# Here goes all the required imports\n'
-            f'#---Begin Solver---\n'
-            f'def solver(in_canvas):\n'
-            f'  # Here goes the code for the solver function\n'
-            f'  return out_canvas\n'
-            f'#---End Solver---\n\n'
-            f'# Here goes any other code to test the solver function\n'
-            f'\n\n'
-            f'As mentioned in the RULES you are not to print out any of that code. You are to create a script in the sandbox,\n'
-            f'write the code there using the write_file tool, use the run_python tool to run it, test if it is correct and\n'
-            f'report the results. Stop once you have a solver that creates a correct out_canvas.\n'
-            f"Here is a description of the allowed functions (and the classes they operate on):\n"
-            f'The classes used are:\n'
-            f'Canvas: An NxM image with exactly the same format as the input and output images given to you.\n'
-            f'A Canvas also holds inside it separately Objects (see below). As these Objects update the Canvas\n'
-            f'pixels also update.\n'
-            f'Object: An KxL (smaller than NxM) image of pixels with a set of properties:\n'
-            f'i) canvas_position: Where in a Canvas the bottom left pixel of the Object should be placed.\n'
-            f'ii) colour: If the Objects pixels are all of the same colour this property is the int of that colour.\n'
-            f'Distance2D: A vector that has magnitude (in pixels), direction (up, down, left , right, up-left, up-right\n'
-            f'down-left, down-right) and an position (where the 0,0 of the vector is)\n'
-            f'Point: A two integer tuple denoting the coordinates of a pixel on a Canvas. The first number is the x (horizontal)\n'
-            f'coordinate and the second the y (vertical).\n'
-            f'int: An integer.\n\n'
-            f'Out of the functions in the dsl_functions.py the ones allowed are:\n')
-
-        prompt += ModelClient.get_docstrings(module=dsl_module, function_names=used_dsl_funcs)
-
-        prompt += (f'The colour mapping is: \n{Colour.Black} = Black, {Colour.Blue} = Blue, {Colour.Red} = Red, \n'
-                   f'{Colour.Green} = Green, {Colour.Yellow} = Yellow, {Colour.Gray} = Gray, {Colour.Purple} = Purple,\n'
-                   f'{Colour.Orange} = Orange, {Colour.Azure} = Azure, {Colour.Burgundy} = Burgundy.\n\n')
-
-        prompt += task.get_task_arrays_for_llm_prompt()
-
-        return prompt

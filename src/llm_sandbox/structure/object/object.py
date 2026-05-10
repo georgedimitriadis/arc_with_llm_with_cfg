@@ -11,9 +11,9 @@ from matplotlib import pyplot as plt
 from scipy import ndimage as ndi
 import skimage
 
-from structure.object.transformation import ObjectTransformations
+from llm_sandbox.structure.object.transformation import ObjectTransformations
 from visualization import visualize_data as vis
-from structure.geometry.basic_geometry import Point, Vector, Orientation, Surround, Bbox, \
+from llm_sandbox.structure.geometry.basic_geometry import Point, Vector, Orientation, Surround, Bbox, \
     Dimension2D, RelativePoint, Colour
 
 from structure import constants as const
@@ -44,7 +44,7 @@ class Object:
 
         self.rotation_axis = deepcopy(self._canvas_pos)
         self.symmetries: List = []
-        self.transformations: List[ObjectTransformations] = []
+        self.transformations: List = []
 
         self._reset_dimensions()
 
